@@ -1,5 +1,5 @@
 /**
- * Bioherbs Agrovet - Customer Management Module
+ * BH Agro Ltd. - Customer Management Module
  * Customer format: BH0002 Amin Feed (Bold), Full Address (1/2 bonani, bogura)
  * Real-time in-place filtering without keyboard collapse
  */
@@ -13,7 +13,7 @@ export class CustomerModule {
     const isAdmin = store.authSession.role === 'admin';
 
     return `
-      <div class="customer-card p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-brand-500/50 transition" data-id="${c.id}" data-name="${(c.shopName || '').toLowerCase()} ${(c.name || '').toLowerCase()}" data-address="${(c.address || '').toLowerCase()}" data-srid="${c.assignedSrId || c.createdBy || ''}">
+      <div class="customer-card p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-brand-500/50 transition" data-id="${c.id}" data-name="${(c.shopName || '').toLowerCase()} ${(c.name || '').toLowerCase()}" data-address="${(c.address || '').toLowerCase()}" data-phone="${(c.phone || '').toLowerCase()}" data-srid="${(c.assignedSrId || c.createdBy || '').toLowerCase()}">
         <div>
           <div class="flex items-start justify-between gap-2 mb-2">
             <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
@@ -87,6 +87,11 @@ export class CustomerModule {
           <a href="https://wa.me/88${c.phone.replace(/[^0-9]/g, '')}" target="_blank" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600" title="WhatsApp">
             <i data-lucide="message-circle" class="w-4 h-4"></i>
           </a>
+          ${isAdmin ? `
+            <button onclick="window.CustomerActions.deleteCustomer('${c.id}')" class="p-2 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition" title="Delete Customer">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -198,8 +203,10 @@ export class CustomerModule {
         const id = card.getAttribute('data-id')?.toLowerCase() || '';
         const name = card.getAttribute('data-name') || '';
         const addr = card.getAttribute('data-address') || '';
+        const phone = card.getAttribute('data-phone') || '';
+        const srid = card.getAttribute('data-srid') || '';
 
-        const matches = !q || id.includes(q) || name.includes(q) || addr.includes(q);
+        const matches = !q || id.includes(q) || name.includes(q) || addr.includes(q) || phone.includes(q) || srid.includes(q);
         if (matches) {
           card.style.display = '';
           visibleCount++;

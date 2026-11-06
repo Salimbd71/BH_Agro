@@ -1,5 +1,5 @@
 /**
- * Bioherbs Agrovet - Router & Browser History Module
+ * BH Agro Ltd. - Router & Browser History Module
  * Prevents app closure on back button by handling pushState & popstate history.
  */
 

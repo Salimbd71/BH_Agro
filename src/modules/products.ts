@@ -8,22 +8,22 @@ import { store, Product } from './store.ts';
 
 export class ProductModule {
   renderProductCard(p: Product): string {
-    const isLow = p.stock < 50;
+    const isLow = p.stock > 0 && p.stock < 10;
     const isOut = p.stock <= 0;
 
     return `
-      <div class="product-item-card p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-brand-500/40 transition" data-name="${(p.name || '').toLowerCase()} ${(p.bnName || '').toLowerCase()}" data-sku="${(p.sku || '').toLowerCase()}" data-cat="${p.category}">
+      <div class="product-item-card p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-brand-500/40 transition" data-name="${(p.name || '').toLowerCase()} ${(p.bnName || '').toLowerCase()}" data-sku="${(p.sku || '').toLowerCase()}" data-cat="${p.category}" data-stock="${p.stock}">
         <div>
           <div class="flex items-start justify-between gap-2 mb-2">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
               p.category === 'antibiotics' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
               (p.category === 'vaccines' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
               (p.category === 'supplements' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'))
             }">
               ${p.category}
             </span>
-            <span class="text-[10px] font-bold ${isLow ? 'text-rose-600' : 'text-slate-500'}">
-              Stock: ${p.stock}
+            <span class="text-[10px] font-bold ${isOut ? 'text-rose-600' : (isLow ? 'text-amber-600 font-extrabold animate-pulse' : 'text-slate-500')}">
+              ${isOut ? 'Out of Stock' : (isLow ? `Low Stock: ${p.stock}` : `Stock: ${p.stock}`)}
             </span>
           </div>
 
@@ -65,6 +65,7 @@ export class ProductModule {
     const products = store.db.products;
     const categories = [
       { id: 'all', label: store.t('categoryAll') },
+      { id: 'low_stock', label: `⚠️ ${store.t('lowStock')} (< 10)`, isAlert: true },
       { id: 'antibiotics', label: store.t('categoryAntibiotics') },
       { id: 'vaccines', label: store.t('categoryVaccines') },
       { id: 'supplements', label: store.t('categorySupplements') },
@@ -79,7 +80,7 @@ export class ProductModule {
               <button onclick="window.ProductActions.filterCategory('${cat.id}')" data-cat="${cat.id}" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 cat.id === 'all'
                   ? 'bg-brand-600 text-white shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                  : (cat.isAlert ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200')
               }">
                 ${cat.label}
               </button>
@@ -146,6 +147,26 @@ export class ProductModule {
           </div>
         </div>
 
+        <!-- Admin Inventory Search Bar -->
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="relative flex-1 min-w-[260px]">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input 
+              type="text" 
+              id="adminProductSearchInput"
+              placeholder="ওষুধের নাম, বাংলা নাম, SKU কোড অথবা ক্যাটাগরি দিয়ে সার্চ করুন..." 
+              autocomplete="off"
+              class="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 transition" 
+            />
+            <button id="clearAdminProductSearchBtn" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div id="adminProductCountNotice" class="text-xs font-bold text-slate-500">
+            Showing ${products.length} registered products
+          </div>
+        </div>
+
         <!-- Inventory Table -->
         <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto">
           <table class="w-full text-left text-xs">
@@ -162,9 +183,14 @@ export class ProductModule {
                 <th class="pb-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody id="adminInventoryTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
               ${products.map(p => `
-                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                <tr 
+                  class="admin-prod-row hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                  data-name="${(p.name || '').toLowerCase()} ${(p.bnName || '').toLowerCase()}"
+                  data-sku="${(p.sku || '').toLowerCase()}"
+                  data-cat="${p.category.toLowerCase()}"
+                >
                   <td class="py-3 font-mono font-bold text-slate-500">${p.sku}</td>
                   <td class="py-3 font-bold text-slate-900 dark:text-white">
                     ${p.name}
@@ -176,7 +202,8 @@ export class ProductModule {
                   <td class="py-3 text-slate-400">৳${p.mrp}</td>
                   <td class="py-3">
                     <span class="px-2 py-0.5 rounded-full font-bold ${
-                      p.stock < 50 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      p.stock <= 0 ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' :
+                      (p.stock < 10 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 animate-pulse' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300')
                     }">
                       ${p.stock}
                     </span>
@@ -249,8 +276,25 @@ export class ProductModule {
         <!-- Live Price & Discount Interactive Table -->
         <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Individual Product Price & Offer Editor</h3>
-            <span class="text-xs text-slate-500 font-medium">Click "Save" on any row to instantly update price & sync to Firebase</span>
+            <div>
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Individual Product Price & Offer Editor</h3>
+              <p class="text-xs text-slate-500 font-medium">Click "Save" on any row to instantly update price & sync to Firebase</p>
+            </div>
+          </div>
+
+          <!-- Price Manager Search Input -->
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input 
+              type="text" 
+              id="priceManagerSearchInput"
+              placeholder="ওষুধের নাম, SKU বা ক্যাটাগরি দিয়ে মূল্য তালিকায় খুঁজুন..." 
+              autocomplete="off"
+              class="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 transition" 
+            />
+            <button id="clearPriceSearchBtn" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
           </div>
 
           <div class="overflow-x-auto">
@@ -266,9 +310,15 @@ export class ProductModule {
                   <th class="pb-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody id="priceManagerTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
                 ${products.map(p => `
-                  <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40" id="priceRow-${p.id}">
+                  <tr 
+                    class="price-editor-row hover:bg-slate-50/50 dark:hover:bg-slate-800/40" 
+                    id="priceRow-${p.id}"
+                    data-name="${(p.name || '').toLowerCase()}"
+                    data-sku="${(p.sku || '').toLowerCase()}"
+                    data-cat="${p.category.toLowerCase()}"
+                  >
                     <td class="py-3 font-mono font-bold text-slate-400">${p.sku}</td>
                     <td class="py-3">
                       <div class="font-bold text-slate-900 dark:text-white">${p.name}</div>
@@ -300,78 +350,177 @@ export class ProductModule {
   }
 
   attachSearchListener() {
+    // 1. SR Product Catalog Grid Search
     const input = document.getElementById('productSearchInput') as HTMLInputElement | null;
     const clearBtn = document.getElementById('clearProductSearchBtn');
     const grid = document.getElementById('productListGrid');
     const notice = document.getElementById('productCountNotice');
 
-    if (!input || !grid) return;
-
     let selectedCat = 'all';
 
-    const performFilter = () => {
-      const q = input.value.trim().toLowerCase();
-      const cards = grid.querySelectorAll<HTMLElement>('.product-item-card');
-      let visible = 0;
+    if (input && grid) {
+      const performFilter = () => {
+        const q = input.value.trim().toLowerCase();
+        const cards = grid.querySelectorAll<HTMLElement>('.product-item-card');
+        let visible = 0;
 
-      cards.forEach(card => {
-        const name = card.getAttribute('data-name') || '';
-        const sku = card.getAttribute('data-sku') || '';
-        const cat = card.getAttribute('data-cat') || '';
+        cards.forEach(card => {
+          const name = card.getAttribute('data-name') || '';
+          const sku = card.getAttribute('data-sku') || '';
+          const cat = card.getAttribute('data-cat') || '';
+          const stock = parseInt(card.getAttribute('data-stock') || '0', 10);
 
-        const matchesCat = selectedCat === 'all' || cat === selectedCat;
-        const matchesQuery = !q || name.includes(q) || sku.includes(q);
-
-        if (matchesCat && matchesQuery) {
-          card.style.display = '';
-          visible++;
-        } else {
-          card.style.display = 'none';
-        }
-      });
-
-      if (notice) {
-        notice.innerText = `Showing ${visible} of ${cards.length} medicines`;
-      }
-      if (clearBtn) {
-        if (q) clearBtn.classList.remove('hidden');
-        else clearBtn.classList.add('hidden');
-      }
-    };
-
-    input.addEventListener('input', () => {
-      performFilter();
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === 'Escape') {
-        input.blur();
-      }
-    });
-
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        input.value = '';
-        performFilter();
-        input.focus();
-      });
-    }
-
-    (window as any).ProductActions = {
-      ...(window as any).ProductActions,
-      filterCategory: (catId: string) => {
-        selectedCat = catId;
-        const pills = document.querySelectorAll('.cat-pill');
-        pills.forEach(p => {
-          if (p.getAttribute('data-cat') === catId) {
-            p.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-brand-600 text-white shadow-sm';
+          let matchesCat = false;
+          if (selectedCat === 'all') {
+            matchesCat = true;
+          } else if (selectedCat === 'low_stock') {
+            matchesCat = stock > 0 && stock < 10;
           } else {
-            p.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200';
+            matchesCat = cat === selectedCat;
+          }
+
+          const matchesQuery = !q || name.includes(q) || sku.includes(q);
+
+          if (matchesCat && matchesQuery) {
+            card.style.display = '';
+            visible++;
+          } else {
+            card.style.display = 'none';
           }
         });
-        performFilter();
+
+        if (notice) {
+          notice.innerText = `Showing ${visible} of ${cards.length} medicines`;
+        }
+        if (clearBtn) {
+          if (q) clearBtn.classList.remove('hidden');
+          else clearBtn.classList.add('hidden');
+        }
+      };
+
+      input.addEventListener('input', () => performFilter());
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') input.blur();
+      });
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          input.value = '';
+          performFilter();
+          input.focus();
+        });
       }
-    };
+
+      (window as any).ProductActions = {
+        ...(window as any).ProductActions,
+        filterCategory: (catId: string) => {
+          selectedCat = catId;
+          const pills = document.querySelectorAll('.cat-pill');
+          pills.forEach(p => {
+            if (p.getAttribute('data-cat') === catId) {
+              p.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-brand-600 text-white shadow-sm';
+            } else {
+              p.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200';
+            }
+          });
+          performFilter();
+        }
+      };
+    }
+
+    // 2. Admin Inventory Table Search
+    const adminInput = document.getElementById('adminProductSearchInput') as HTMLInputElement | null;
+    const adminClearBtn = document.getElementById('clearAdminProductSearchBtn');
+    const adminTableBody = document.getElementById('adminInventoryTableBody');
+    const adminNotice = document.getElementById('adminProductCountNotice');
+
+    if (adminInput && adminTableBody) {
+      const performAdminFilter = (query: string) => {
+        const q = query.trim().toLowerCase();
+        const rows = adminTableBody.querySelectorAll<HTMLElement>('.admin-prod-row');
+        let visible = 0;
+
+        rows.forEach(row => {
+          const name = row.getAttribute('data-name') || '';
+          const sku = row.getAttribute('data-sku') || '';
+          const cat = row.getAttribute('data-cat') || '';
+
+          const matches = !q || name.includes(q) || sku.includes(q) || cat.includes(q);
+          if (matches) {
+            row.style.display = '';
+            visible++;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+
+        if (adminNotice) {
+          adminNotice.innerText = q ? `Found ${visible} product(s) matching "${q}"` : `Showing ${rows.length} registered products`;
+        }
+        if (adminClearBtn) {
+          if (q) adminClearBtn.classList.remove('hidden');
+          else adminClearBtn.classList.add('hidden');
+        }
+      };
+
+      adminInput.addEventListener('input', (e) => {
+        performAdminFilter((e.target as HTMLInputElement).value);
+      });
+      adminInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') adminInput.blur();
+      });
+      if (adminClearBtn) {
+        adminClearBtn.addEventListener('click', () => {
+          adminInput.value = '';
+          performAdminFilter('');
+          adminInput.focus();
+        });
+      }
+    }
+
+    // 3. Price & Discount Manager Search
+    const priceInput = document.getElementById('priceManagerSearchInput') as HTMLInputElement | null;
+    const priceClearBtn = document.getElementById('clearPriceSearchBtn');
+    const priceTableBody = document.getElementById('priceManagerTableBody');
+
+    if (priceInput && priceTableBody) {
+      const performPriceFilter = (query: string) => {
+        const q = query.trim().toLowerCase();
+        const rows = priceTableBody.querySelectorAll<HTMLElement>('.price-editor-row');
+
+        rows.forEach(row => {
+          const name = row.getAttribute('data-name') || '';
+          const sku = row.getAttribute('data-sku') || '';
+          const cat = row.getAttribute('data-cat') || '';
+
+          const matches = !q || name.includes(q) || sku.includes(q) || cat.includes(q);
+          if (matches) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+
+        if (priceClearBtn) {
+          if (q) priceClearBtn.classList.remove('hidden');
+          else priceClearBtn.classList.add('hidden');
+        }
+      };
+
+      priceInput.addEventListener('input', (e) => {
+        performPriceFilter((e.target as HTMLInputElement).value);
+      });
+      priceInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') priceInput.blur();
+      });
+      if (priceClearBtn) {
+        priceClearBtn.addEventListener('click', () => {
+          priceInput.value = '';
+          performPriceFilter('');
+          priceInput.focus();
+        });
+      }
+    }
   }
 
   openAddProductModal(onSaved: () => void) {
@@ -491,6 +640,149 @@ export class ProductModule {
         onSaved();
       });
     }
+  }
+
+  openLowStockModal(onProductAction?: () => void) {
+    const lowStockItems = store.db.products.filter(p => p.stock > 0 && p.stock < 10);
+    const cartCount = Object.keys(store.cart.items).length;
+
+    const modalHtml = `
+      <div id="lowStockModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-rose-200 dark:border-rose-900/60 max-h-[90vh] flex flex-col">
+          
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>স্বল্প স্টক ও ইনভেন্টরি ম্যানেজমেন্ট</span>
+                  <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                    ${lowStockItems.length} টি আইটেম
+                  </span>
+                </h3>
+                <p class="text-xs text-rose-500 font-semibold">যেসব প্রোডাক্টের স্টক রয়েছে কিন্তু ১০ ইউনিটের নিচে (&lt; 10 Units in stock)</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Go to Stock Management">
+                <i data-lucide="boxes" class="w-3.5 h-3.5"></i>
+                <span>স্টক ম্যানেজমেন্ট</span>
+              </button>
+              <button onclick="document.getElementById('lowStockModal').remove()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Notice explaining options -->
+          <div class="mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-300 flex items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-2">
+              <i data-lucide="info" class="w-4 h-4 shrink-0 text-amber-600"></i>
+              <span><b>স্টক ম্যানেজ করুন:</b> সরাসরি স্টক বাড়াতে <b>+১০, +৫০, +১০০</b> বাটনে চাপ দিন অথবা নির্দিষ্ট সংখ্যা লিখে <b>"যোগ"</b> করুন।</span>
+            </div>
+            <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="whitespace-nowrap px-3 py-1 rounded-lg bg-white dark:bg-slate-800 font-bold text-[11px] text-brand-700 dark:text-brand-300 shadow-sm border border-amber-200 hover:bg-amber-100">
+              সব স্টক ম্যানেজ করুন →
+            </button>
+          </div>
+
+          <!-- Products List -->
+          <div class="overflow-y-auto my-3 flex-1 pr-1 space-y-3">
+            ${lowStockItems.length === 0 ? `
+              <div class="text-center py-12 text-slate-400">
+                <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto mb-2 text-emerald-500 opacity-80"></i>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-200">কোন লো স্টক আইটেম নেই!</p>
+                <p class="text-xs mt-1">সব ইন-স্টক প্রোডাক্টের পরিমাণ পর্যাপ্ত (১০ ইউনিটের বেশি) রয়েছে।</p>
+              </div>
+            ` : `
+              ${lowStockItems.map(p => `
+                <div class="p-4 rounded-2xl bg-white dark:bg-slate-850 border border-rose-200/80 dark:border-rose-900/50 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-rose-400 transition">
+                  
+                  <!-- Product Info -->
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono font-bold text-xs text-brand-700 dark:text-brand-400">${p.sku}</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">${p.category}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 animate-pulse">
+                        অবশিষ্ট স্টক: <b>${p.stock} টি</b>
+                      </span>
+                    </div>
+
+                    <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${p.name}</h4>
+                    <p class="text-xs text-slate-500">${p.bnName} • ${p.packSize}</p>
+                    <div class="text-xs font-bold text-brand-700 dark:text-brand-400 flex items-center gap-3 pt-0.5">
+                      <span>Trade Price (TP): ৳${p.tradePrice}</span>
+                      <span>MRP: ৳${p.mrp}</span>
+                      ${p.tradeOffer ? `<span class="text-tealbrand-600 font-semibold">• ${p.tradeOffer}</span>` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Actions: Restock + Order Slip -->
+                  <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                    
+                    <!-- Quick Restock Pill Buttons -->
+                    <div class="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <span class="text-[10px] font-bold text-slate-400 px-1">স্টক যোগ:</span>
+                      <button onclick="window.ProductActions.restockProduct('${p.id}', 10)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition" title="Add 10 to stock">
+                        +10
+                      </button>
+                      <button onclick="window.ProductActions.restockProduct('${p.id}', 50)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition" title="Add 50 to stock">
+                        +50
+                      </button>
+                      <button onclick="window.ProductActions.restockProduct('${p.id}', 100)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition" title="Add 100 to stock">
+                        +100
+                      </button>
+                    </div>
+
+                    <!-- Custom Qty Input -->
+                    <div class="flex items-center gap-1">
+                      <input 
+                        type="number" 
+                        id="customStock-${p.id}" 
+                        placeholder="Qty" 
+                        class="w-16 px-2 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-center" 
+                      />
+                      <button onclick="const el = document.getElementById('customStock-${p.id}'); if(el && el.value) window.ProductActions.restockProduct('${p.id}', Number(el.value));" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-sm transition" title="Save Custom Added Stock">
+                        যোগ
+                      </button>
+                    </div>
+
+                    <!-- Add to Order Slip Button -->
+                    <button onclick="document.getElementById('lowStockModal').remove(); window.ProductActions.quickOrder('${p.id}');" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow flex items-center gap-1.5 active:scale-95 transition" title="Add to Order Slip and open slip screen">
+                      <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+                      <span>স্লিপে নিন ও দেখুন</span>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            `}
+          </div>
+
+          <!-- Footer -->
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between shrink-0 gap-3 text-xs">
+            <div class="text-slate-500 font-medium">
+              মোট স্বল্প-স্টক ওষুধ: <b>${lowStockItems.length}</b> টি (স্বয়ংক্রিয় রিয়েলটাইম সিঙ্ক)
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="px-4 py-2 rounded-xl border border-brand-300 dark:border-brand-800 bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="boxes" class="w-3.5 h-3.5"></i>
+                <span>সম্পূর্ণ স্টক ম্যানেজমেন্ট খুলুন (Stock Management)</span>
+              </button>
+
+              <button onclick="document.getElementById('lowStockModal').remove()" class="px-5 py-2 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">
+                বন্ধ করুন (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    if ((window as any).lucide) (window as any).lucide.createIcons();
   }
 }
 

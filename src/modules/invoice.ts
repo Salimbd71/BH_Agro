@@ -1,5 +1,5 @@
 /**
- * Bioherbs Agrovet - PDF Invoice & Delivery Challan Generation Module
+ * BH Agro Ltd. - PDF Invoice & Delivery Challan Generation Module
  * Formats file name as: <customer_name>_<customer_id>_<ddmmyyyy>.pdf
  * Example: Amin_feed_BH0002_06112026.pdf
  */

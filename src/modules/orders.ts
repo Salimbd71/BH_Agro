@@ -1,5 +1,5 @@
 /**
- * Bioherbs Agrovet - Orders & Field Booking Module
+ * BH Agro Ltd. - Orders & Field Booking Module
  * Direct confirmed booking without Admin approval
  * Admin actions: Print Invoice & Delete Order
  */
@@ -141,8 +141,11 @@ export class OrderModule {
                         }">
                           ${p.category}
                         </span>
-                        <span class="text-[10px] font-bold ${p.stock < 50 ? 'text-rose-600' : 'text-slate-500'}">
-                          Stock: ${p.stock}
+                        <span class="text-[10px] font-bold ${
+                          p.stock <= 0 ? 'text-rose-600' :
+                          (p.stock < 10 ? 'text-amber-600 font-extrabold animate-pulse' : 'text-slate-500')
+                        }">
+                          ${p.stock <= 0 ? 'Out of Stock' : (p.stock < 10 ? `Low: ${p.stock}` : `Stock: ${p.stock}`)}
                         </span>
                       </div>
 

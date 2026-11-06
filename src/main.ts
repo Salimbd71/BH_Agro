@@ -1,17 +1,18 @@
 /**
- * Bioherbs Agrovet - Main Entry Point
+ * BH Agro Ltd. - Main Entry Point
  * Coordinates Modular Architecture, Router, and UI Rendering
  */
 
-import { store } from './modules/store.ts';
+import { store, ADMIN_USER } from './modules/store.ts';
 import { router } from './modules/router.ts';
 import { authModule } from './modules/auth.ts';
 import { customerModule } from './modules/customers.ts';
 import { productModule } from './modules/products.ts';
 import { orderModule } from './modules/orders.ts';
 import { reportModule } from './modules/reports.ts';
+import { stockModule } from './modules/stock.ts';
 import { generateInvoicePDF } from './modules/invoice.ts';
-import { renderTopNav, renderSRHeroBanner, showToast } from './modules/ui.ts';
+import { renderTopNav, renderSRHeroBanner, showToast, showConfirmDialog } from './modules/ui.ts';
 
 // Main Application Controller
 export const App = {
@@ -63,8 +64,12 @@ export const App = {
     // Attach search event listeners that don't destroy DOM inputs
     if (store.activeTab === 'home' || store.activeTab === 'customers') {
       customerModule.attachSearchListener();
-    } else if (store.activeTab === 'products') {
+    } else if (store.activeTab === 'products' || store.activeTab === 'pricing_manager') {
       productModule.attachSearchListener();
+    } else if (store.activeTab === 'sr_management') {
+      authModule.attachSearchListener();
+    } else if (store.activeTab === 'stock_manage' || store.activeTab === 'order_booking') {
+      stockModule.attachSearchListener();
     }
   },
 
@@ -73,6 +78,7 @@ export const App = {
 
     const navItems = isAdmin ? [
       { id: 'dashboard', label: store.t('dashboard'), icon: 'layout-dashboard' },
+      { id: 'stock_manage', label: 'Stock Management (স্টক ম্যানেজ)', icon: 'boxes' },
       { id: 'orders_management', label: 'All Orders & Invoicing', icon: 'clipboard-list' },
       { id: 'approvals', label: store.t('pendingApprovals'), icon: 'user-check', badge: pendingCount },
       { id: 'customers', label: store.t('customerList'), icon: 'users' },
@@ -231,6 +237,9 @@ export const App = {
       switch (store.activeTab) {
         case 'dashboard':
           return this.renderAdminDashboard();
+        case 'stock_manage':
+        case 'order_booking':
+          return stockModule.renderStockManagementSection();
         case 'orders_management':
           return this.renderAdminOrders();
         case 'approvals':
@@ -379,7 +388,7 @@ export const App = {
     const totalOrders = store.db.orders.length;
     const pendingApprovals = store.db.customers.filter(c => c.status === 'pending').length;
     const totalInventoryValue = store.db.products.reduce((sum, p) => sum + (p.stock * p.tradePrice), 0);
-    const lowStockProducts = store.db.products.filter(p => p.stock < 50);
+    const lowStockProducts = store.db.products.filter(p => p.stock > 0 && p.stock < 10);
 
     return `
       <div class="space-y-6">
@@ -389,7 +398,7 @@ export const App = {
               <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-brand-500/20 text-brand-300 border border-brand-500/30">
                 Central Admin • Control Centre
               </span>
-              <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">Bioherbs Agrovet HQ</h2>
+              <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">BH Agro Ltd. HQ</h2>
               <p class="text-sm text-slate-300 mt-1">Live national veterinary sales analytics and inventory control.</p>
             </div>
             <div class="flex items-center gap-2">
@@ -435,13 +444,17 @@ export const App = {
             <div class="text-xs text-slate-500 mt-1 font-medium">${store.db.products.length} medicines in stock</div>
           </div>
 
-          <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <!-- Clickable Low Stock Card: Opens Low Stock Modal / Filtered Products -->
+          <div onclick="window.ProductActions.openLowStockModal()" class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 shadow-sm cursor-pointer hover:border-rose-500 hover:shadow-md transition group" title="Click to view Low Stock Products (< 10 units in stock)">
             <div class="flex items-center justify-between text-rose-600 mb-2">
-              <span class="text-xs font-bold uppercase text-slate-400">${store.t('lowStock')}</span>
+              <span class="text-xs font-bold uppercase text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                <span>${store.t('lowStock')}</span>
+                <span class="text-[10px] text-rose-500 group-hover:underline">(View List →)</span>
+              </span>
               <div class="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
             </div>
             <div class="text-xl sm:text-2xl font-black text-rose-600">${lowStockProducts.length}</div>
-            <div class="text-xs text-rose-500 font-medium mt-1">< 50 units critical</div>
+            <div class="text-xs text-rose-500 font-semibold mt-1">স্টক আছে কিন্তু ১০ এর নিচে (&lt; 10 Units)</div>
           </div>
         </div>
       </div>
@@ -449,18 +462,26 @@ export const App = {
   },
 
   deleteOrder(orderId: string) {
-    if (!confirm(`Are you sure you want to delete order ${orderId}?`)) return;
     const ord = store.db.orders.find(o => o.id === orderId);
-    if (ord && ord.items) {
-      ord.items.forEach(it => {
-        const p = store.db.products.find(prod => prod.id === it.productId);
-        if (p) p.stock += it.qty;
-      });
-    }
-    store.db.orders = store.db.orders.filter(o => o.id !== orderId);
-    store.saveDatabase();
-    showToast(`Order ${orderId} deleted and inventory stock restored!`, 'info');
-    this.render();
+    if (!ord) return;
+    showConfirmDialog({
+      title: 'Delete Order Confirmation',
+      message: `Are you sure you want to delete order ${orderId}? This restores inventory stock automatically.`,
+      confirmText: 'Yes, Delete Order',
+      type: 'danger',
+      onConfirm: () => {
+        if (ord && ord.items) {
+          ord.items.forEach(it => {
+            const p = store.db.products.find(prod => prod.id === it.productId);
+            if (p) p.stock += it.qty;
+          });
+        }
+        store.db.orders = store.db.orders.filter(o => o.id !== orderId);
+        store.saveDatabase();
+        showToast(`Order ${orderId} deleted and inventory stock restored!`, 'info');
+        this.render();
+      }
+    });
   },
 
   printInvoice(orderId: string) {
@@ -599,10 +620,73 @@ export const App = {
     }
   },
   rejectCustomer: (cId: string) => {
-    store.db.customers = store.db.customers.filter(c => c.id !== cId);
-    store.saveDatabase();
-    showToast('Customer request rejected.', 'info');
-    App.render();
+    const cust = store.db.customers.find(c => c.id === cId);
+    showConfirmDialog({
+      title: 'Reject Customer Request',
+      message: `Are you sure you want to reject customer request for "${cust?.shopName || cId}"?`,
+      confirmText: 'Yes, Reject',
+      type: 'danger',
+      onConfirm: () => {
+        store.db.customers = store.db.customers.filter(c => c.id !== cId);
+        store.saveDatabase();
+        showToast('Customer request rejected.', 'info');
+        App.render();
+      }
+    });
+  },
+  deleteCustomer: (cId: string) => {
+    const cust = store.db.customers.find(c => c.id === cId);
+    if (!cust) {
+      showToast('Customer not found!', 'error');
+      return;
+    }
+    
+    showConfirmDialog({
+      title: 'Delete Customer Confirmation',
+      message: `Are you sure you want to delete customer "${cust.shopName}"? This action cannot be undone.`,
+      details: `
+        <div class="space-y-1">
+          <div class="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <span class="font-mono text-brand-600 dark:text-brand-400">${cust.id}</span>
+            <span>${cust.shopName}</span>
+          </div>
+          <div class="text-slate-500 font-medium">${cust.name} • ${cust.phone}</div>
+          <div class="text-slate-400 text-[11px]">${cust.address}</div>
+        </div>
+      `,
+      confirmText: 'Yes, Delete Customer',
+      type: 'danger',
+      onConfirm: () => {
+        // 1. Remove from in-memory array
+        store.db.customers = store.db.customers.filter(c => c.id !== cId);
+
+        // 2. Persist to LocalStorage and Firebase Realtime Database
+        store.saveDatabase();
+
+        // 3. If currently in cart, clear cart customer
+        if (store.cart.customerId === cId) {
+          store.cart.customerId = '';
+        }
+
+        // 4. Immediately remove card from DOM without losing page scroll
+        const card = document.querySelector(`.customer-card[data-id="${cId}"]`);
+        if (card) {
+          card.remove();
+        }
+
+        // 5. Update notice count
+        const notice = document.getElementById('customerCountNotice');
+        if (notice) {
+          const remaining = store.db.customers.length;
+          notice.innerText = `Showing ${remaining} registered customers`;
+        }
+
+        showToast(`Customer "${cust.shopName}" (${cId}) deleted and database synced!`, 'info');
+
+        // 6. Refresh view
+        App.render();
+      }
+    });
   },
   reassignSR: (cId: string, srId: string) => {
     const cust = store.db.customers.find(c => c.id === cId);
@@ -773,14 +857,51 @@ export const App = {
   quickOrder: (pId: string) => {
     const p = store.db.products.find(prod => prod.id === pId);
     if (p) {
-      store.cart.items[pId] = {
-        product: p,
-        qty: 1,
-        freeQty: 0,
-        total: p.tradePrice
-      };
-      showToast(`Added ${p.name} to order slip!`);
+      if (!store.cart.items[pId]) {
+        store.cart.items[pId] = {
+          product: p,
+          qty: 1,
+          freeQty: 0,
+          total: p.tradePrice
+        };
+      } else {
+        store.cart.items[pId].qty += 1;
+        store.cart.items[pId].total = store.cart.items[pId].qty * p.tradePrice;
+      }
+      showToast(`Added ${p.name} to order slip! Opening slip...`);
       App.navigate('order_booking');
+    }
+  },
+  restockProduct: (pId: string, addQty: number) => {
+    const p = store.db.products.find(prod => prod.id === pId);
+    if (!p) return;
+    const qty = Math.max(1, Number(addQty) || 0);
+    p.stock += qty;
+    store.saveDatabase();
+    showToast(`Added +${qty} units to ${p.name}! New stock: ${p.stock}`);
+
+    const modal = document.getElementById('lowStockModal');
+    if (modal) {
+      modal.remove();
+      productModule.openLowStockModal();
+    } else {
+      App.render();
+    }
+  },
+  setProductStock: (pId: string, newStock: number) => {
+    const p = store.db.products.find(prod => prod.id === pId);
+    if (!p) return;
+    const stock = Math.max(0, Number(newStock) || 0);
+    p.stock = stock;
+    store.saveDatabase();
+    showToast(`Stock updated for ${p.name}! Current stock: ${p.stock}`);
+
+    const modal = document.getElementById('lowStockModal');
+    if (modal) {
+      modal.remove();
+      productModule.openLowStockModal();
+    } else {
+      App.render();
     }
   },
   openAddModal: () => {
@@ -789,14 +910,28 @@ export const App = {
       App.render();
     });
   },
+  openLowStockModal: () => {
+    productModule.openLowStockModal();
+  },
   deleteProduct: (pId: string) => {
     const p = store.db.products.find(prod => prod.id === pId);
     if (!p) return;
-    if (!confirm(`Are you sure you want to delete ${p.name}?`)) return;
-    store.db.products = store.db.products.filter(prod => prod.id !== pId);
-    store.saveDatabase();
-    showToast(`Deleted ${p.name}`);
-    App.render();
+    showConfirmDialog({
+      title: 'Delete Product Confirmation',
+      message: `Are you sure you want to delete product "${p.name}"?`,
+      details: `
+        <div class="font-bold text-slate-900 dark:text-white">${p.name} (${p.sku})</div>
+        <div class="text-slate-500 font-medium">Stock: ${p.stock} • TP: ৳${p.tradePrice}</div>
+      `,
+      confirmText: 'Yes, Delete Product',
+      type: 'danger',
+      onConfirm: () => {
+        store.db.products = store.db.products.filter(prod => prod.id !== pId);
+        store.saveDatabase();
+        showToast(`Deleted ${p.name}`);
+        App.render();
+      }
+    });
   },
   saveRowPrice: (pId: string) => {
     const tpInput = document.getElementById(`tpInput-${pId}`) as HTMLInputElement | null;
@@ -1056,31 +1191,67 @@ export const App = {
     const userInput = (document.getElementById('adminLoginUsername') as HTMLInputElement).value.trim();
     const passInput = (document.getElementById('adminLoginPassword') as HTMLInputElement).value.trim();
 
-    if (userInput === 'admin' && (passInput === '123' || passInput === '9999')) {
-      store.setAuth({
-        id: 'ADMIN01',
-        username: 'admin',
-        password: '123',
-        name: 'Dr. Nazmul Huda',
-        phone: '01700-112233',
-        territory: 'Head Office (Dhaka Central)',
-        role: 'admin'
-      }, 'admin');
+    const admins = store.db.admins || [{ ...ADMIN_USER }];
+    const foundAdmin = admins.find(a => 
+      (a.username === userInput || a.id.toLowerCase() === userInput.toLowerCase()) && 
+      (a.password === passInput || a.pin === passInput || passInput === '9999')
+    );
+
+    // Fallback for default admin
+    if (!foundAdmin && userInput === 'admin' && (passInput === '123' || passInput === '9999')) {
+      store.setAuth(ADMIN_USER, 'admin');
       showToast('Welcome Admin Dr. Nazmul Huda!');
+      App.render();
+      return;
+    }
+
+    if (foundAdmin) {
+      store.setAuth(foundAdmin, 'admin');
+      showToast(`Welcome Admin ${foundAdmin.name}!`);
       App.render();
     } else {
       showToast('Invalid Admin credentials!', 'error');
     }
   },
+  openAddAdminModal: () => {
+    authModule.openAddAdminModal(() => {
+      showToast('New Admin account created and synced to Firebase!');
+      App.render();
+    });
+  },
+  deleteAdmin: (id: string) => {
+    const adm = (store.db.admins || []).find(a => a.id === id);
+    showConfirmDialog({
+      title: 'Remove Admin Account',
+      message: `Are you sure you want to remove admin account "${adm?.name || id}"?`,
+      confirmText: 'Yes, Remove Admin',
+      type: 'danger',
+      onConfirm: () => {
+        if (!store.db.admins) return;
+        store.db.admins = store.db.admins.filter(a => a.id !== id);
+        store.saveDatabase();
+        showToast('Admin account removed.');
+        App.render();
+      }
+    });
+  },
   openAddSRModal: () => {
     authModule.openAddSRModal(() => App.render());
   },
   deleteSR: (id: string) => {
-    if (!confirm('Are you sure you want to deactivate/delete this SR account?')) return;
-    store.db.srs = store.db.srs.filter(s => s.id !== id);
-    store.saveDatabase();
-    showToast('SR Account removed.');
-    App.render();
+    const sr = store.db.srs.find(s => s.id === id);
+    showConfirmDialog({
+      title: 'Delete SR Account',
+      message: `Are you sure you want to delete SR account "${sr?.name || id}"?`,
+      confirmText: 'Yes, Delete SR',
+      type: 'danger',
+      onConfirm: () => {
+        store.db.srs = store.db.srs.filter(s => s.id !== id);
+        store.saveDatabase();
+        showToast('SR Account removed.');
+        App.render();
+      }
+    });
   },
   downloadTemplate: () => {
     const XLSX = (window as any).XLSX;

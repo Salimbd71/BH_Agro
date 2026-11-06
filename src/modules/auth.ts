@@ -1,9 +1,10 @@
 /**
- * Bioherbs Agrovet - Authentication & SR Account Management Module
+ * BH Agro Ltd. - Authentication & SR Account Management Module
  * Admin creates SR ID with Username & Password, synced to Realtime DB
  */
 
-import { store, SRUser, ADMIN_USER } from './store.ts';
+import { store, SRUser, ADMIN_USER, AdminUser } from './store.ts';
+import { showToast } from './ui.ts';
 
 export class AuthModule {
   renderLoginScreen(): string {
@@ -107,6 +108,11 @@ export class AuthModule {
             <p class="text-xs text-slate-500">Admin creates SR accounts with Username & Password, synced with Firebase Realtime DB.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <button onclick="window.AuthActions.openAddAdminModal()" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs shadow flex items-center gap-1.5 transition active:scale-95" title="Create New Admin Account">
+              <i data-lucide="shield-plus" class="w-4 h-4"></i>
+              <span>+ Create Admin</span>
+            </button>
+
             <button onclick="window.AuthActions.downloadTemplate()" class="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 shadow-sm" title="Download Excel Template">
               <i data-lucide="download" class="w-3.5 h-3.5 text-brand-600"></i>
               <span>Download Template</span>
@@ -125,12 +131,82 @@ export class AuthModule {
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Registered Admins List Section -->
+        <div class="p-5 rounded-3xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/60 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-purple-900 dark:text-purple-300">
+              <i data-lucide="shield" class="w-5 h-5 text-purple-600"></i>
+              <h3 class="font-extrabold text-sm sm:text-base">System Admin Accounts (${(store.db.admins || []).length})</h3>
+            </div>
+            <button onclick="window.AuthActions.openAddAdminModal()" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs rounded-xl shadow-sm">
+              + New Admin
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            ${(store.db.admins || []).map(a => `
+              <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-mono font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded-md">${a.id}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">Central Admin</span>
+                  </div>
+                  <h4 class="font-black text-sm text-slate-900 dark:text-white">${a.name}</h4>
+                  <div class="mt-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-[11px] font-mono space-y-0.5">
+                    <div class="flex justify-between text-slate-500">
+                      <span>Username:</span>
+                      <span class="font-bold text-purple-700 dark:text-purple-300">${a.username}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                      <span>Password:</span>
+                      <span class="font-bold text-slate-800 dark:text-slate-100">${a.password}</span>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-2">${a.territory || 'Head Office'} • <span class="font-mono">${a.phone}</span></p>
+                </div>
+                ${a.username !== 'admin' ? `
+                  <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                    <button onclick="window.AuthActions.deleteAdmin('${a.id}')" class="text-xs text-rose-500 hover:underline">Remove</button>
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- SR Search Bar -->
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="relative flex-1 min-w-[260px]">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input 
+              type="text" 
+              id="srSearchInput"
+              placeholder="এসআর আইডি, নাম, ফোন নম্বর, ইউজারনেম অথবা টেরিটরি দিয়ে খুঁজুন..." 
+              autocomplete="off"
+              class="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 transition" 
+            />
+            <button id="clearSrSearchBtn" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div id="srCountNotice" class="text-xs font-bold text-slate-500">
+            Showing ${srs.length} Field SR Accounts
+          </div>
+        </div>
+
+        <div id="srCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           ${srs.map(sr => {
             const srOrders = store.db.orders.filter(o => o.srId === sr.id);
             const sales = srOrders.reduce((sum, o) => sum + o.grandTotal, 0);
             return `
-              <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <div 
+                class="sr-account-card p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
+                data-id="${(sr.id || '').toLowerCase()}"
+                data-name="${(sr.name || '').toLowerCase()}"
+                data-username="${(sr.username || '').toLowerCase()}"
+                data-phone="${(sr.phone || '').toLowerCase()}"
+                data-territory="${(sr.territory || '').toLowerCase()}"
+              >
                 <div>
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-mono font-black text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded-md">${sr.id}</span>
@@ -171,6 +247,61 @@ export class AuthModule {
         </div>
       </div>
     `;
+  }
+
+  attachSearchListener() {
+    const input = document.getElementById('srSearchInput') as HTMLInputElement | null;
+    const clearBtn = document.getElementById('clearSrSearchBtn');
+    const grid = document.getElementById('srCardsGrid');
+    const notice = document.getElementById('srCountNotice');
+
+    if (!input || !grid) return;
+
+    const performFilter = (query: string) => {
+      const q = query.trim().toLowerCase();
+      const cards = grid.querySelectorAll<HTMLElement>('.sr-account-card');
+      let visible = 0;
+
+      cards.forEach(card => {
+        const id = card.getAttribute('data-id') || '';
+        const name = card.getAttribute('data-name') || '';
+        const user = card.getAttribute('data-username') || '';
+        const phone = card.getAttribute('data-phone') || '';
+        const territory = card.getAttribute('data-territory') || '';
+
+        const matches = !q || id.includes(q) || name.includes(q) || user.includes(q) || phone.includes(q) || territory.includes(q);
+        if (matches) {
+          card.style.display = '';
+          visible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (notice) {
+        notice.innerText = q ? `Found ${visible} SR(s) matching "${q}"` : `Showing ${cards.length} Field SR Accounts`;
+      }
+      if (clearBtn) {
+        if (q) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+    };
+
+    input.addEventListener('input', (e) => {
+      performFilter((e.target as HTMLInputElement).value);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') input.blur();
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        performFilter('');
+        input.focus();
+      });
+    }
   }
 
   openAddSRModal(onSaved: () => void) {
@@ -257,6 +388,113 @@ export class AuthModule {
         store.db.srs.push(newSr);
         store.saveDatabase();
         document.getElementById('srModal')?.remove();
+        onSaved();
+      });
+    }
+  }
+
+  openAddAdminModal(onSaved: () => void) {
+    const adminsCount = (store.db.admins || []).length;
+    const nextId = `ADMIN${String(adminsCount + 1).padStart(2, '0')}`;
+    const modalHtml = `
+      <div id="adminCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-purple-200 dark:border-purple-900">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+              <h3 class="font-extrabold text-base">Create New Admin Account</h3>
+            </div>
+            <button onclick="document.getElementById('adminCreateModal').remove()"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+
+          <form id="newAdminForm" class="mt-4 space-y-3.5 text-xs">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold mb-1">Admin ID</label>
+                <input type="text" id="newAdminId" required value="${nextId}" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 font-mono font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Admin Full Name *</label>
+                <input type="text" id="newAdminName" required placeholder="e.g. Md. Tariqul Islam" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold mb-1">Login Username *</label>
+                <input type="text" id="newAdminUsername" required placeholder="tariq_admin" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Login Password *</label>
+                <input type="text" id="newAdminPassword" required value="123" placeholder="Set Password" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono font-bold" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold mb-1">Mobile Phone *</label>
+                <input type="tel" id="newAdminPhone" required placeholder="017XXXXXXXX" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Department / Branch *</label>
+                <input type="text" id="newAdminTerritory" required value="Head Office (Central HQ)" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">Email (Optional)</label>
+              <input type="email" id="newAdminEmail" placeholder="admin@bhagroltd.com" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono" />
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-[11px] text-purple-900 dark:text-purple-300">
+              ℹ️ এই অ্যাডমিন অ্যাকাউন্টটি তৈরি করার সাথে সাথেই Firebase Realtime Database এ সিঙ্ক হয়ে যাবে এবং যেকোনো ডিভাইস থেকে এই ইউজারনেম ও পাসওয়ার্ড দিয়ে লগইন করা যাবে।
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t">
+              <button type="button" onclick="document.getElementById('adminCreateModal').remove()" class="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+              <button type="submit" class="px-5 py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-xl shadow-md">Create Admin Account</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    if ((window as any).lucide) (window as any).lucide.createIcons();
+
+    const form = document.getElementById('newAdminForm');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const adminId = (document.getElementById('newAdminId') as HTMLInputElement).value.trim();
+        const name = (document.getElementById('newAdminName') as HTMLInputElement).value.trim();
+        const username = (document.getElementById('newAdminUsername') as HTMLInputElement).value.trim().toLowerCase();
+        const password = (document.getElementById('newAdminPassword') as HTMLInputElement).value.trim();
+        const phone = (document.getElementById('newAdminPhone') as HTMLInputElement).value.trim();
+        const territory = (document.getElementById('newAdminTerritory') as HTMLInputElement).value.trim();
+        const email = (document.getElementById('newAdminEmail') as HTMLInputElement).value.trim() || `${username}@bhagroltd.com`;
+
+        if (!store.db.admins) store.db.admins = [];
+
+        // Check if username already exists
+        if (store.db.admins.some(a => a.username === username)) {
+          showToast('This username is already taken by another admin!', 'error');
+          return;
+        }
+
+        const newAdmin: AdminUser = {
+          id: adminId,
+          username: username,
+          password: password,
+          name: name,
+          phone: phone,
+          territory: territory,
+          email: email,
+          role: 'admin'
+        };
+
+        store.db.admins.push(newAdmin);
+        store.saveDatabase();
+        document.getElementById('adminCreateModal')?.remove();
         onSaved();
       });
     }

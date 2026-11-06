@@ -1,5 +1,5 @@
 /**
- * Bioherbs Agrovet - Store & State Management Module
+ * BH Agro Ltd. - Store & State Management Module
  * Synchronized with Firebase Realtime Database & LocalStorage
  */
 
@@ -121,13 +121,13 @@ export const INITIAL_PRODUCTS: Product[] = [
   { id: 'PROD-02', name: 'Amoxicillin-Vet 100g WSP', bnName: 'অ্যামোক্সিসিলিন-ভেট ১০০ গ্রাম', sku: 'BHA-ANT-002', category: 'antibiotics', packSize: '100 gm Sachet', tradePrice: 350, mrp: 410, stock: 180, tradeOffer: '5% Cash Discount', batchNo: 'B26-092', dosage: 'Broiler & Layer bacterial cure' },
   { id: 'PROD-03', name: 'Colistin DS Powder 100g', bnName: 'কলিস্টিন ডিএস পাউডার ১০০ গ্রাম', sku: 'BHA-ANT-003', category: 'antibiotics', packSize: '100 gm Pack', tradePrice: 420, mrp: 495, stock: 120, tradeOffer: '20+2 Free', batchNo: 'B26-077', dosage: 'Specific for E. coli & Salmonella' },
   { id: 'PROD-04', name: 'Oxyvet LA Inj 50ml', bnName: 'অক্সিভেট এলএ ইনজেকশন ৫০ মি.লি.', sku: 'BHA-ANT-004', category: 'antibiotics', packSize: '50 ml Vial', tradePrice: 260, mrp: 310, stock: 95, tradeOffer: '15+1 Free', batchNo: 'B26-105', dosage: 'Long acting cattle antibiotic' },
-  { id: 'PROD-05', name: 'Gentasol-Vet 100ml', bnName: 'জেন্টাসল-ভেট ১০০ মি.লি.', sku: 'BHA-ANT-005', category: 'antibiotics', packSize: '100 ml Vial', tradePrice: 195, mrp: 235, stock: 32, tradeOffer: 'Standard', batchNo: 'B26-061', dosage: 'Broad spectrum injectable' },
+  { id: 'PROD-05', name: 'Gentasol-Vet 100ml', bnName: 'জেন্টাসল-ভেট ১০০ মি.লি.', sku: 'BHA-ANT-005', category: 'antibiotics', packSize: '100 ml Vial', tradePrice: 195, mrp: 235, stock: 6, tradeOffer: 'Standard', batchNo: 'B26-061', dosage: 'Broad spectrum injectable' },
 
   // Vaccines
   { id: 'PROD-06', name: 'Bio-Gumboro Live (1000D)', bnName: 'বায়ো-গামবোরো লাইভ (১০০০ ডোজ)', sku: 'BHA-VAC-001', category: 'vaccines', packSize: '1000 Dose Vial', tradePrice: 450, mrp: 520, stock: 300, tradeOffer: 'Strict Cold Chain', batchNo: 'VAC-26-03', dosage: 'Poultry IBD protection' },
   { id: 'PROD-07', name: 'ND Clone 30 Lasota (1000D)', bnName: 'এনডি ক্লোন ৩০ লাসোটা (১০০০ ডোজ)', sku: 'BHA-VAC-002', category: 'vaccines', packSize: '1000 Dose Vial', tradePrice: 380, mrp: 440, stock: 250, tradeOffer: 'Cold Chain', batchNo: 'VAC-26-09', dosage: 'Newcastle Disease prevention' },
   { id: 'PROD-08', name: 'Bio-FMD Inactivated (50D)', bnName: 'বায়ো-এফএমডি ভ্যাকসিন (৫০ ডোজ)', sku: 'BHA-VAC-003', category: 'vaccines', packSize: '100 ml Vial', tradePrice: 1850, mrp: 2150, stock: 65, tradeOffer: 'Free Icebox with 5 vials', batchNo: 'VAC-26-14', dosage: 'Cattle Foot & Mouth Disease' },
-  { id: 'PROD-09', name: 'Anthrax Spore Vaccine (50D)', bnName: 'অ্যানথ্রাক্স স্পোর ভ্যাকসিন (৫০ ডোজ)', sku: 'BHA-VAC-004', category: 'vaccines', packSize: '50 ml Vial', tradePrice: 320, mrp: 390, stock: 18, tradeOffer: 'Cold Chain', batchNo: 'VAC-26-02', dosage: 'Cattle & Sheep anthrax control' },
+  { id: 'PROD-09', name: 'Anthrax Spore Vaccine (50D)', bnName: 'অ্যানথ্রাক্স স্পোর ভ্যাকসিন (৫০ ডোজ)', sku: 'BHA-VAC-004', category: 'vaccines', packSize: '50 ml Vial', tradePrice: 320, mrp: 390, stock: 4, tradeOffer: 'Cold Chain', batchNo: 'VAC-26-02', dosage: 'Cattle & Sheep anthrax control' },
 
   // Feed Supplements & Vitamins
   { id: 'PROD-10', name: 'Bio-CalPlex 5 Litre', bnName: 'বায়ো-ক্যালপ্লেক্স ৫ লিটার', sku: 'BHA-SUP-001', category: 'supplements', packSize: '5 Litre Jar', tradePrice: 820, mrp: 980, stock: 140, tradeOffer: 'Buy 5 Jars get 1 Mineral 1kg Free', batchNo: 'SUP-26-44', dosage: 'High potency Dairy Calcium + D3' },
@@ -384,6 +384,7 @@ export interface DBState {
   customers: Customer[];
   orders: Order[];
   srs: SRUser[];
+  admins?: AdminUser[];
   lastUpdated: string;
 }
 
@@ -472,6 +473,10 @@ export class Store {
     } else {
       try {
         this.db = JSON.parse(raw);
+        // Ensure admins array exists
+        if (!this.db.admins || this.db.admins.length === 0) {
+          this.db.admins = [{ ...ADMIN_USER }];
+        }
         // Ensure assignedSrId exists for legacy data
         if (this.db && this.db.customers) {
           this.db.customers.forEach(c => {
@@ -493,6 +498,7 @@ export class Store {
       customers: [...INITIAL_CUSTOMERS],
       orders: [...INITIAL_ORDERS],
       srs: [...INITIAL_SR_LIST],
+      admins: [{ ...ADMIN_USER }],
       lastUpdated: new Date().toISOString()
     };
     this.saveDatabase();

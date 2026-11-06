@@ -1,5 +1,5 @@
 /**
- * Bioherbs Agrovet - UI Layout Components
+ * BH Agro Ltd. - UI Layout Components
  * Top header with Product List Icon, Hero Banner with Target/Achievement/Today's bookings,
  * and Toast notification system
  */
@@ -28,6 +28,87 @@ export function showToast(message: string, type: string = 'success') {
     toast.classList.add('opacity-0', 'translate-y-2');
     setTimeout(() => toast.remove(), 300);
   }, 3500);
+}
+
+export interface ConfirmDialogOptions {
+  title: string;
+  message: string;
+  details?: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'warning' | 'info';
+  onConfirm: () => void;
+  onCancel?: () => void;
+}
+
+export function showConfirmDialog(options: ConfirmDialogOptions) {
+  // Remove existing confirm modal if any
+  const existing = document.getElementById('appConfirmModal');
+  if (existing) existing.remove();
+
+  const isDanger = options.type !== 'info' && options.type !== 'warning';
+  const confirmBtnBg = isDanger ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-brand-600 hover:bg-brand-500 text-white';
+  const iconBg = isDanger ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400';
+  const iconName = isDanger ? 'trash-2' : 'alert-circle';
+
+  const modalHtml = `
+    <div id="appConfirmModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-start gap-3.5">
+          <div class="w-12 h-12 rounded-2xl ${iconBg} flex items-center justify-center shrink-0">
+            <i data-lucide="${iconName}" class="w-6 h-6"></i>
+          </div>
+          <div class="space-y-1 flex-1">
+            <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+              ${options.title}
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
+              ${options.message}
+            </p>
+          </div>
+        </div>
+
+        ${options.details ? `
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 font-medium">
+            ${options.details}
+          </div>
+        ` : ''}
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button id="confirmCancelBtn" type="button" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            ${options.cancelText || 'Cancel'}
+          </button>
+          <button id="confirmActionBtn" type="button" class="px-5 py-2.5 rounded-xl ${confirmBtnBg} text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="${iconName}" class="w-3.5 h-3.5"></i>
+            <span>${options.confirmText || 'Yes, Delete'}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  if ((window as any).lucide) (window as any).lucide.createIcons();
+
+  const modal = document.getElementById('appConfirmModal');
+  const cancelBtn = document.getElementById('confirmCancelBtn');
+  const confirmBtn = document.getElementById('confirmActionBtn');
+
+  const closeDialog = () => {
+    modal?.remove();
+    if (options.onCancel) options.onCancel();
+  };
+
+  cancelBtn?.addEventListener('click', closeDialog);
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeDialog();
+  });
+
+  confirmBtn?.addEventListener('click', () => {
+    modal?.remove();
+    options.onConfirm();
+  });
 }
 
 export function renderTopNav(isAdmin: boolean): string {

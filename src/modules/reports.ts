@@ -329,7 +329,7 @@ export class ReportModule {
                     <td class="py-2 font-mono text-slate-400">${p.sku}</td>
                     <td class="py-2 font-bold">${p.name}</td>
                     <td class="py-2">
-                      <span class="font-bold ${p.stock < 50 ? 'text-rose-600' : ''}">${p.stock}</span>
+                      <span class="font-bold ${p.stock < 10 ? 'text-rose-600 font-black' : ''}">${p.stock}</span>
                     </td>
                     <td class="py-2">৳${p.tradePrice}</td>
                     <td class="py-2 text-right font-black">৳${(p.stock * p.tradePrice).toLocaleString()}</td>
@@ -472,7 +472,7 @@ export class ReportModule {
       'MRP': p.mrp,
       'Stock On Hand': p.stock,
       'Total Valuation (BDT)': p.stock * p.tradePrice,
-      'Status': p.stock < 50 ? 'LOW STOCK ALERT' : 'Normal'
+      'Status': p.stock <= 0 ? 'OUT OF STOCK' : (p.stock < 10 ? 'LOW STOCK ALERT (<10)' : 'Normal')
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
