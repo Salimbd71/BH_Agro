@@ -1,0 +1,207 @@
+/**
+ * Bioherbs Agrovet - UI Layout Components
+ * Top header with Product List Icon, Hero Banner with Target/Achievement/Today's bookings,
+ * and Toast notification system
+ */
+
+import { store } from './store.ts';
+
+export function showToast(message: string, type: string = 'success') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  const bg = type === 'success' ? 'bg-emerald-600 text-white' : (type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white');
+  toast.className = `${bg} px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium transform transition-all duration-300 translate-y-3 opacity-0 pointer-events-auto`;
+  toast.innerHTML = `
+    <i data-lucide="${type === 'success' ? 'check-circle-2' : (type === 'error' ? 'alert-triangle' : 'info')}" class="w-5 h-5 shrink-0"></i>
+    <span>${message}</span>
+  `;
+  container.appendChild(toast);
+  if ((window as any).lucide) (window as any).lucide.createIcons();
+
+  requestAnimationFrame(() => {
+    toast.classList.remove('translate-y-3', 'opacity-0');
+  });
+
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'translate-y-2');
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+export function renderTopNav(isAdmin: boolean): string {
+  const isSR = !isAdmin;
+
+  return `
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        
+        <!-- Brand Identity & Mobile Menu Toggle -->
+        <div class="flex items-center gap-2.5">
+          <!-- Mobile Hamburger Menu Button (Allows opening sidebar anytime on mobile) -->
+          <button onclick="window.App.openMobileMenu()" class="p-2 -ml-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 md:hidden hover:bg-slate-200" title="Open Navigation Menu">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+
+          <div class="flex items-center gap-3 cursor-pointer" onclick="window.App.navigate('${isAdmin ? 'dashboard' : 'home'}')">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-tealbrand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+              <i data-lucide="leaf" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-lg sm:text-xl tracking-tight text-brand-900 dark:text-brand-300">BH AGRO</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-bold uppercase ${isAdmin ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' : 'bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300'}">
+                  LTD.
+                </span>
+              </div>
+              <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 hidden sm:block">${store.authSession.user?.name} • ${store.authSession.user?.territory}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls & Specific SR Header Icons -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          
+          <!-- TOP HEADER PRODUCT LIST ICON (Explicitly requested for SR site!) -->
+          ${isSR ? `
+            <button onclick="window.App.navigate('products')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-950/60 text-brand-800 dark:text-brand-300 font-bold text-xs hover:bg-brand-100 transition shadow-sm active:scale-95" title="View Veterinary Medicines Catalog">
+              <i data-lucide="package" class="w-4 h-4 text-brand-600"></i>
+              <span class="hidden sm:inline">Medicines</span>
+            </button>
+
+            <button onclick="window.App.navigate('my_orders')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs hover:bg-slate-100 transition shadow-sm" title="My Bookings">
+              <i data-lucide="calendar-check" class="w-4 h-4 text-tealbrand-600"></i>
+              <span class="hidden sm:inline">Orders</span>
+            </button>
+          ` : ''}
+
+          <!-- Admin-Only Firebase Realtime DB Settings -->
+          ${isAdmin ? `
+            <button onclick="window.App.openFirebaseModal()" class="flex items-center gap-2 text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-lg border transition-all ${
+              store.isFirebaseReady
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+            }">
+              <span class="w-2 h-2 rounded-full animate-pulse ${store.isFirebaseReady ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+              <span class="hidden md:inline">${store.isFirebaseReady ? store.t('onlineFirebase') : store.t('localDemo')}</span>
+              <i data-lucide="database" class="w-3.5 h-3.5 opacity-70"></i>
+            </button>
+          ` : ''}
+
+          <!-- Language Switcher -->
+          <button onclick="window.App.toggleLang()" class="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-brand-500 transition-colors">
+            <i data-lucide="languages" class="w-3.5 h-3.5 text-brand-600"></i>
+            <span>${store.lang === 'bn' ? 'English' : 'বাংলা'}</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button onclick="window.App.toggleTheme()" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-brand-600 transition-colors" title="Toggle Theme">
+            <i data-lucide="${store.theme === 'dark' ? 'sun' : 'moon'}" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Logout Button -->
+          <button onclick="window.App.logout()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 font-bold text-xs transition">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">${store.t('logout')}</span>
+          </button>
+
+        </div>
+      </div>
+    </header>
+  `;
+}
+
+/**
+ * Hero Banner on SR Home Page
+ * Shows Target, Achievement %, Today's order booking count and value
+ */
+export function renderSRHeroBanner(): string {
+  const srId = store.authSession.user?.id || 'SR01';
+  const myOrders = store.db.orders.filter(o => o.srId === srId);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayOrders = myOrders.filter(o => o.date === todayStr);
+  
+  const todayBookingCount = todayOrders.length;
+  const todayBookingValue = todayOrders.reduce((acc, o) => acc + o.grandTotal, 0);
+  const totalSalesAchieved = myOrders.reduce((acc, o) => acc + o.grandTotal, 0);
+  
+  const target = (store.authSession.user as any)?.target || 350000;
+  const achievementPct = Math.min(100, Math.round((totalSalesAchieved / target) * 100));
+
+  return `
+    <div class="p-6 rounded-3xl bg-gradient-to-r from-brand-800 via-brand-700 to-tealbrand-700 text-white shadow-xl relative overflow-hidden mb-6">
+      <div class="relative z-10 space-y-4">
+        
+        <!-- Header badge & Greeting -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 backdrop-blur border border-white/20">
+              ${store.authSession.user?.territory || 'Territory Field'}
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">
+              ${store.lang === 'bn' ? 'স্বাগতম' : 'Welcome'}, ${store.authSession.user?.name}
+            </h2>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button onclick="window.App.navigate('order_booking')" class="px-4 py-2.5 bg-white text-brand-900 rounded-2xl font-extrabold text-xs shadow-md hover:bg-brand-50 transition flex items-center gap-1.5 active:scale-95">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-brand-600"></i>
+              <span>${store.t('orderBooking')}</span>
+            </button>
+            <button onclick="window.App.navigate('products')" class="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold text-xs backdrop-blur border border-white/30 transition flex items-center gap-1.5">
+              <i data-lucide="package" class="w-4 h-4"></i>
+              <span>Medicines</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Key Metrics Bar (Target, Achievement, Today Count, Today Value) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+          
+          <!-- Monthly Target -->
+          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
+            <div class="text-[11px] font-bold text-brand-200 uppercase">${store.t('target')}</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5">৳${target.toLocaleString()}</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">Monthly Territory Goal</div>
+          </div>
+
+          <!-- Total Achievement -->
+          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
+            <div class="text-[11px] font-bold text-amber-300 uppercase">${store.t('achievement')} (${achievementPct}%)</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5 text-amber-200">৳${totalSalesAchieved.toLocaleString()}</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">${myOrders.length} confirmed orders</div>
+          </div>
+
+          <!-- Today's Booking Number -->
+          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
+            <div class="text-[11px] font-bold text-emerald-300 uppercase">${store.t('todayBookingCount')}</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5">${todayBookingCount}</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">Bookings today (${todayStr})</div>
+          </div>
+
+          <!-- Today's Booking Value -->
+          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
+            <div class="text-[11px] font-bold text-teal-200 uppercase">${store.t('todayBookingValue')}</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5 text-teal-100">৳${todayBookingValue.toLocaleString()}</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">Gross daily volume</div>
+          </div>
+
+        </div>
+
+        <!-- Target Progress Bar -->
+        <div class="pt-2">
+          <div class="flex items-center justify-between text-xs font-semibold mb-1 text-brand-100">
+            <span>Monthly Achievement Progress</span>
+            <span class="font-bold text-amber-300">${achievementPct}%</span>
+          </div>
+          <div class="w-full h-2.5 rounded-full bg-black/30 overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-amber-300 to-emerald-300 rounded-full transition-all duration-500" style="width: ${achievementPct}%"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Bioherbs Agrovet - Animal Health ERP & SR Management",
+  "description": "Comprehensive SR Order Booking, Customer Management, Inventory, and Sales Analytics platform for Bioherbs Agrovet with Firebase and offline demo support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
