@@ -1,19 +1,33 @@
 /**
  * BH Agro Ltd. - Sales Reports & SheetJS Excel Export Module
- * Includes SR-wise, Customer-wise, Day-wise, Product-wise, and Stock Valuation reports
+ * Day-wise, Customer-wise, and Product-wise sales reports
+ * Real-time Firebase Database sync and personalized view for SRs & Admin
  */
 
 import { store } from './store.ts';
 
 export class ReportModule {
   renderReportsSection(): string {
-    const orders = store.db.orders;
-    const srs = store.db.srs;
-    const customers = store.db.customers;
+    const isSR = store.authSession.role !== 'admin';
+    const currentSr = store.authSession.user;
+    const currentSrId = currentSr?.id || 'SR01';
 
-    // 1. SR-wise aggregation
+    // Filter data: An SR only sees their own orders & assigned customers! Admin sees all.
+    const orders = isSR 
+      ? store.db.orders.filter(o => o.srId === currentSrId) 
+      : store.db.orders;
+
+    const customers = isSR
+      ? store.db.customers.filter(c => (c.assignedSrId || c.createdBy) === currentSrId)
+      : store.db.customers;
+
+    const srs = isSR
+      ? store.db.srs.filter(s => s.id === currentSrId)
+      : store.db.srs;
+
+    // 1. SR-wise aggregation (For Admin comparative view or SR target card)
     const srReportList = srs.map(sr => {
-      const srOrders = orders.filter(o => o.srId === sr.id);
+      const srOrders = store.db.orders.filter(o => o.srId === sr.id);
       const totalAmount = srOrders.reduce((acc, o) => acc + o.grandTotal, 0);
       const totalItems = srOrders.reduce((acc, o) => acc + o.items.reduce((s, it) => s + it.qty, 0), 0);
       const target = sr.target || 350000;
@@ -47,7 +61,7 @@ export class ReportModule {
       creditLimit: number;
     }> = {};
 
-    // Initialize with all approved customers
+    // Initialize with approved customers
     customers.forEach(c => {
       custReportMap[c.id] = {
         id: c.id,
@@ -88,11 +102,11 @@ export class ReportModule {
     const daywiseList = Object.values(daywiseMap).sort((a, b) => b.date.localeCompare(a.date));
 
     // 4. Product-wise aggregation
-    const prodSalesMap: Record<string, { name: string; packSize: string; totalQty: number; totalRevenue: number }> = {};
+    const prodSalesMap: Record<string, { name: string; packSize: string; unitPrice: number; totalQty: number; totalRevenue: number }> = {};
     orders.forEach(o => {
       o.items.forEach(it => {
         if (!prodSalesMap[it.productId]) {
-          prodSalesMap[it.productId] = { name: it.name, packSize: it.packSize, totalQty: 0, totalRevenue: 0 };
+          prodSalesMap[it.productId] = { name: it.name, packSize: it.packSize, unitPrice: it.tp, totalQty: 0, totalRevenue: 0 };
         }
         prodSalesMap[it.productId].totalQty += it.qty;
         prodSalesMap[it.productId].totalRevenue += it.total;
@@ -100,33 +114,162 @@ export class ReportModule {
     });
     const prodSalesList = Object.values(prodSalesMap).sort((a, b) => b.totalRevenue - a.totalRevenue);
 
+    // Summary calculation
+    const totalSalesAmount = orders.reduce((sum, o) => sum + o.grandTotal, 0);
+    const totalUnitsSold = orders.reduce((sum, o) => sum + o.items.reduce((s, it) => s + it.qty, 0), 0);
+    const srTarget = (currentSr as any)?.target || 350000;
+    const srPct = Math.min(100, Math.round((totalSalesAmount / srTarget) * 100));
+
+    const isBN = store.lang === 'bn';
+
     return `
-      <div class="space-y-8">
+      <div class="space-y-6">
         
-        <!-- Header -->
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <i data-lucide="bar-chart-3" class="w-6 h-6 text-brand-600"></i>
-              <span>${store.t('reportsAnalytics')} - BH Agro Ltd.</span>
-            </h2>
-            <p class="text-xs text-slate-500">Comprehensive SR-wise, Customer-wise, Day-wise, and Inventory reports with instant SheetJS Excel export.</p>
+        <!-- Header Banner -->
+        <div class="p-6 rounded-3xl ${isSR ? 'bg-gradient-to-r from-brand-900 via-brand-850 to-tealbrand-900' : 'bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900'} text-white shadow-xl border border-brand-800/40">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                  ${isSR 
+                    ? (isBN ? `এসআর সেলস রিপোর্ট • ${currentSr?.name || ''} (${currentSrId})` : `SR Field Sales Report • ${currentSr?.name || ''} (${currentSrId})`)
+                    : (isBN ? 'সেন্ট্রাল হেডকোয়ার্টার • সেলস ও অ্যানালিটিক্স' : 'Central HQ • Sales & Analytics Control')}
+                </span>
+                <span class="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>${store.t('databaseSynced')}</span>
+                </span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                ${isSR 
+                  ? (isBN ? 'ফিল্ড সেলস রিপোর্ট' : 'Field Sales Reports') 
+                  : (isBN ? 'বিএইচ এগ্রো লি. - কেন্দ্রীয় সেলস রিপোর্ট' : 'BH Agro Ltd. - Central Sales Report')}
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                ${isSR 
+                  ? (isBN ? `${currentSr?.territory || ''} টেরিটরির দৈনিক, গ্রাহকভিত্তিক ও পণ্যভিত্তিক বিক্রয় বিবরণী` : `Territory daily, customer-wise and product sales reports for ${currentSr?.territory || ''}`)
+                  : (isBN ? 'সারাদেশের সকল এসআর, গ্রাহক ও পণ্যের লাইভ বিক্রয় বিশ্লেষণ' : 'Real-time sales performance across all SRs, customers, and medicines')}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="window.ReportActions.exportDaywise()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 border border-white/20 transition backdrop-blur-sm">
+                <i data-lucide="download" class="w-3.5 h-3.5 text-tealbrand-300"></i>
+                <span>${isBN ? 'দৈনিক এক্সেল (.xlsx)' : 'Day-wise (.xlsx)'}</span>
+              </button>
+              <button onclick="window.ReportActions.exportCustomerWise()" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>${isBN ? 'গ্রাহকভিত্তিক এক্সেল (.xlsx)' : 'Customer-wise (.xlsx)'}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SR Target Progress Bar (When SR is viewing) -->
+          ${isSR ? `
+            <div class="mt-5 pt-4 border-t border-white/10">
+              <div class="flex justify-between items-center text-xs font-bold mb-1.5">
+                <span class="text-slate-200">${isBN ? 'মাসিক সেলস টার্গেট অগ্রগতি:' : 'Monthly Sales Target Progress:'}</span>
+                <span class="text-amber-300 font-mono">৳${totalSalesAmount.toLocaleString()} / ৳${srTarget.toLocaleString()} (${srPct}%)</span>
+              </div>
+              <div class="w-full bg-black/40 rounded-full h-2.5 overflow-hidden p-0.5 border border-white/10">
+                <div class="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: ${srPct}%"></div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Metrics Overview Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-brand-600 mb-2">
+              <span class="text-[11px] font-bold uppercase text-slate-400">${store.t('totalRevenue')}</span>
+              <div class="p-2 rounded-xl bg-brand-50 dark:bg-brand-950/60"><i data-lucide="banknote" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-brand-700 dark:text-brand-400">৳${totalSalesAmount.toLocaleString()}</div>
+            <div class="text-[11px] text-slate-500 font-medium mt-1">
+              ${isBN ? 'মোট বিক্রয় সম্পন্ন' : 'Gross sales volume'}
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-tealbrand-600 mb-2">
+              <span class="text-[11px] font-bold uppercase text-slate-400">${store.t('totalOrdersCount')}</span>
+              <div class="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/60"><i data-lucide="clipboard-check" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              ${isBN ? `${orders.length} টি` : `${orders.length} orders`}
+            </div>
+            <div class="text-[11px] text-slate-500 font-medium mt-1">
+              ${isBN ? 'নিশ্চিত অর্ডার স্লিপ' : 'Confirmed bookings'}
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-blue-600 mb-2">
+              <span class="text-[11px] font-bold uppercase text-slate-400">${store.t('totalUnitsDelivered')}</span>
+              <div class="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60"><i data-lucide="package" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              ${isBN ? `${totalUnitsSold.toLocaleString()} টি` : `${totalUnitsSold.toLocaleString()} units`}
+            </div>
+            <div class="text-[11px] text-slate-500 font-medium mt-1">
+              ${isBN ? 'পণ্য সরবরাহ সম্পন্ন' : 'Items delivered'}
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-purple-600 mb-2">
+              <span class="text-[11px] font-bold uppercase text-slate-400">${store.t('totalAssignedCustomers')}</span>
+              <div class="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60"><i data-lucide="users" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              ${isBN ? `${customers.length} টি` : `${customers.length} clients`}
+            </div>
+            <div class="text-[11px] text-purple-600 font-bold mt-1">
+              ${isSR ? (isBN ? 'আপনার অধীনস্থ গ্রাহক' : 'Assigned in your territory') : (isBN ? 'মোট নিবন্ধিত গ্রাহক' : 'Total active customers')}
+            </div>
           </div>
         </div>
 
-        <!-- 1. SR-WISE SALES REPORT (NEW) -->
+        <!-- Real-time Report Search Input -->
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="relative flex-1 min-w-[260px]">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input 
+              type="text" 
+              id="reportSearchInput"
+              placeholder="${store.t('filterReportsPlaceholder')}" 
+              autocomplete="off"
+              class="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 transition" 
+            />
+            <button id="clearReportSearchBtn" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="text-xs font-semibold text-slate-500">
+            ${isBN ? 'রিয়েল-টাইম ডাটাবেস ফিল্টারিং' : 'Real-time Database Live Search'}
+          </div>
+        </div>
+
+        <!-- 1. DAY-WISE SALES REPORT -->
         <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <div class="p-2 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600"><i data-lucide="trophy" class="w-4 h-4"></i></div>
+            <div class="flex items-center gap-2.5">
+              <div class="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+              </div>
               <div>
-                <h3 class="font-extrabold text-sm sm:text-base">${store.t('srWiseReport')}</h3>
-                <p class="text-[11px] text-slate-400">Territory performance and monthly sales target achievements</p>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
+                  ${store.t('daywiseReportTitle')}
+                </h3>
+                <p class="text-[11px] text-slate-500">
+                  ${store.t('daywiseReportSubtitle')}
+                </p>
               </div>
             </div>
-            <button onclick="window.ReportActions.exportSRWise()" class="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
+            <button onclick="window.ReportActions.exportDaywise()" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>Export SR Report (.xlsx)</span>
+              <span>${isBN ? 'দৈনিক এক্সেল (.xlsx)' : 'Export Day-wise (.xlsx)'}</span>
             </button>
           </div>
 
@@ -134,37 +277,27 @@ export class ReportModule {
             <table class="w-full text-left text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
-                  <th class="pb-2">SR ID</th>
-                  <th class="pb-2">SR Name</th>
-                  <th class="pb-2">Territory</th>
-                  <th class="pb-2">Monthly Target (৳)</th>
-                  <th class="pb-2">Orders Placed</th>
-                  <th class="pb-2">Units Sold</th>
-                  <th class="pb-2">Achieved Sales (৳)</th>
-                  <th class="pb-2 text-right">Target Progress</th>
+                  <th class="pb-2.5">${store.t('dateCol')}</th>
+                  <th class="pb-2.5">${store.t('ordersCol')}</th>
+                  <th class="pb-2.5">${store.t('unitsCol')}</th>
+                  <th class="pb-2.5 text-right">${store.t('amountCol')}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                ${srReportList.map(sr => `
-                  <tr class="hover:bg-slate-50/50">
-                    <td class="py-3 font-mono font-bold text-brand-700 dark:text-brand-400">${sr.id}</td>
-                    <td class="py-3 font-bold text-slate-900 dark:text-white">
-                      ${sr.name}
-                      <div class="text-[10px] text-slate-400 font-normal font-mono">${sr.phone}</div>
+              <tbody id="dayReportTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                ${daywiseList.length === 0 ? `
+                  <tr><td colspan="4" class="py-8 text-center text-slate-400 text-xs">
+                    ${isBN ? 'কোন দৈনিক বিক্রয় তথ্য নেই' : 'No daily sales records found'}
+                  </td></tr>
+                ` : daywiseList.map(d => `
+                  <tr class="day-report-row hover:bg-slate-50/50 dark:hover:bg-slate-800/40" data-date="${d.date}">
+                    <td class="py-3 font-mono font-bold text-brand-700 dark:text-brand-400">${d.date}</td>
+                    <td class="py-3 font-semibold text-slate-800 dark:text-slate-200">
+                      ${isBN ? `${d.orderCount} টি অর্ডার` : `${d.orderCount} orders`}
                     </td>
-                    <td class="py-3 text-slate-600 dark:text-slate-300">${sr.territory}</td>
-                    <td class="py-3 font-mono text-slate-500">৳${sr.target.toLocaleString()}</td>
-                    <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${sr.orderCount} orders</td>
-                    <td class="py-3 text-slate-500">${sr.totalItems} units</td>
-                    <td class="py-3 font-black text-brand-700 dark:text-brand-400">৳${sr.totalAmount.toLocaleString()}</td>
-                    <td class="py-3 text-right">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        sr.achievementPct >= 80 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
-                        (sr.achievementPct >= 50 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300')
-                      }">
-                        ${sr.achievementPct}%
-                      </span>
+                    <td class="py-3 text-slate-600 dark:text-slate-400">
+                      ${isBN ? `${d.totalItems} টি ইউনিট` : `${d.totalItems} units`}
                     </td>
+                    <td class="py-3 text-right font-black text-brand-700 dark:text-brand-400">৳${d.totalAmount.toLocaleString()}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -172,19 +305,25 @@ export class ReportModule {
           </div>
         </div>
 
-        <!-- 2. CUSTOMER-WISE SALES REPORT (NEW) -->
+        <!-- 2. CUSTOMER-WISE SALES REPORT -->
         <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <div class="p-2 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600"><i data-lucide="users" class="w-4 h-4"></i></div>
+            <div class="flex items-center gap-2.5">
+              <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600">
+                <i data-lucide="users" class="w-5 h-5"></i>
+              </div>
               <div>
-                <h3 class="font-extrabold text-sm sm:text-base">${store.t('customerWiseReport')}</h3>
-                <p class="text-[11px] text-slate-400">Farm, store and pharmacy purchase volumes and balances</p>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
+                  ${store.t('custwiseReportTitle')}
+                </h3>
+                <p class="text-[11px] text-slate-500">
+                  ${store.t('custwiseReportSubtitle')}
+                </p>
               </div>
             </div>
             <button onclick="window.ReportActions.exportCustomerWise()" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>Export Customer Report (.xlsx)</span>
+              <span>${isBN ? 'গ্রাহক এক্সেল (.xlsx)' : 'Export Customer (.xlsx)'}</span>
             </button>
           </div>
 
@@ -192,28 +331,42 @@ export class ReportModule {
             <table class="w-full text-left text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
-                  <th class="pb-2">Customer ID</th>
-                  <th class="pb-2">Shop / Farm Name</th>
-                  <th class="pb-2">Category</th>
-                  <th class="pb-2">Territory</th>
-                  <th class="pb-2">Orders Placed</th>
-                  <th class="pb-2">Units Purchased</th>
-                  <th class="pb-2">Total Amount (৳)</th>
-                  <th class="pb-2 text-right">Balance Due (৳)</th>
+                  <th class="pb-2.5">${isBN ? 'আইডি' : 'Customer ID'}</th>
+                  <th class="pb-2.5">${store.t('customerCol')}</th>
+                  <th class="pb-2.5">${store.t('category')}</th>
+                  <th class="pb-2.5">${store.t('territory')}</th>
+                  <th class="pb-2.5">${store.t('ordersCol')}</th>
+                  <th class="pb-2.5">${store.t('unitsCol')}</th>
+                  <th class="pb-2.5">${store.t('amountCol')}</th>
+                  <th class="pb-2.5 text-right">${store.t('dueBalanceCol')}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                ${custReportList.map(c => `
-                  <tr class="hover:bg-slate-50/50">
+              <tbody id="custReportTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                ${custReportList.length === 0 ? `
+                  <tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">
+                    ${isBN ? 'কোন গ্রাহক বিক্রয় তথ্য পাওয়া যায়নি' : 'No customer sales records found'}
+                  </td></tr>
+                ` : custReportList.map(c => `
+                  <tr 
+                    class="cust-report-row hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                    data-id="${c.id.toLowerCase()}"
+                    data-name="${c.shopName.toLowerCase()} ${c.name.toLowerCase()}"
+                    data-phone="${c.phone.toLowerCase()}"
+                    data-territory="${c.territory.toLowerCase()}"
+                  >
                     <td class="py-3 font-mono font-bold text-brand-700 dark:text-brand-400">${c.id}</td>
-                    <td class="py-3 font-bold text-slate-900 dark:text-white">
-                      ${c.shopName}
-                      <div class="text-[10px] text-slate-400 font-normal">${c.name} • ${c.phone}</div>
+                    <td class="py-3">
+                      <div class="font-bold text-slate-900 dark:text-white">${c.shopName}</div>
+                      <div class="text-[10px] text-slate-400 font-normal">${c.name} • <span class="font-mono">${c.phone}</span></div>
                     </td>
-                    <td class="py-3 uppercase text-[10px] font-bold text-slate-500">${c.category.replace('_', ' ')}</td>
+                    <td class="py-3 uppercase text-[10px] font-bold text-slate-500">${store.t(c.category) || c.category}</td>
                     <td class="py-3 text-slate-600 dark:text-slate-300">${c.territory}</td>
-                    <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${c.orderCount} orders</td>
-                    <td class="py-3 text-slate-500">${c.totalItems} units</td>
+                    <td class="py-3 font-bold text-slate-700 dark:text-slate-300">
+                      ${isBN ? `${c.orderCount} টি` : `${c.orderCount} orders`}
+                    </td>
+                    <td class="py-3 text-slate-500">
+                      ${isBN ? `${c.totalItems} টি` : `${c.totalItems} units`}
+                    </td>
                     <td class="py-3 font-black text-blue-700 dark:text-blue-400">৳${c.totalAmount.toLocaleString()}</td>
                     <td class="py-3 text-right font-mono font-bold ${c.balance > 0 ? 'text-amber-600' : 'text-slate-400'}">
                       ৳${c.balance.toLocaleString()}
@@ -225,53 +378,25 @@ export class ReportModule {
           </div>
         </div>
 
-        <!-- 3. DAY-WISE SALES REPORT -->
+        <!-- 3. PRODUCT-WISE SALES REPORT -->
         <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <div class="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600"><i data-lucide="calendar" class="w-4 h-4"></i></div>
-              <h3 class="font-extrabold text-sm sm:text-base">${store.t('daywiseSales')}</h3>
-            </div>
-            <button onclick="window.ReportActions.exportDaywise()" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>${store.t('exportExcel')}</span>
-            </button>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
-                  <th class="pb-2">Date</th>
-                  <th class="pb-2">Orders Placed</th>
-                  <th class="pb-2">Units Sold</th>
-                  <th class="pb-2 text-right">Total Revenue (৳)</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                ${daywiseList.map(d => `
-                  <tr class="hover:bg-slate-50/50">
-                    <td class="py-2.5 font-mono font-bold">${d.date}</td>
-                    <td class="py-2.5">${d.orderCount} orders</td>
-                    <td class="py-2.5">${d.totalItems} units</td>
-                    <td class="py-2.5 text-right font-black text-brand-700 dark:text-brand-400">৳${d.totalAmount.toLocaleString()}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 4. PRODUCT-WISE SALES REPORT -->
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <div class="p-2 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600"><i data-lucide="pie-chart" class="w-4 h-4"></i></div>
-              <h3 class="font-extrabold text-sm sm:text-base">${store.t('productwiseSales')}</h3>
+            <div class="flex items-center gap-2.5">
+              <div class="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
+                  ${store.t('prodwiseReportTitle')}
+                </h3>
+                <p class="text-[11px] text-slate-500">
+                  ${store.t('prodwiseReportSubtitle')}
+                </p>
+              </div>
             </div>
             <button onclick="window.ReportActions.exportProductSales()" class="px-3.5 py-1.5 rounded-xl bg-tealbrand-600 hover:bg-tealbrand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>${store.t('exportExcel')}</span>
+              <span>${isBN ? 'পণ্য বিক্রয় এক্সেল (.xlsx)' : 'Export Product Sales (.xlsx)'}</span>
             </button>
           </div>
 
@@ -279,69 +404,196 @@ export class ReportModule {
             <table class="w-full text-left text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
-                  <th class="pb-2">Product Name</th>
-                  <th class="pb-2">Packing</th>
-                  <th class="pb-2">Quantity Sold</th>
-                  <th class="pb-2 text-right">Gross Sales (৳)</th>
+                  <th class="pb-2.5">${store.t('productNameCol')}</th>
+                  <th class="pb-2.5">${store.t('packSizeCol')}</th>
+                  <th class="pb-2.5">${store.t('rateCol')}</th>
+                  <th class="pb-2.5">${store.t('quantityCol')}</th>
+                  <th class="pb-2.5 text-right">${store.t('revenueCol')}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                ${prodSalesList.map(p => `
-                  <tr class="hover:bg-slate-50/50">
-                    <td class="py-2.5 font-bold text-slate-900 dark:text-white">${p.name}</td>
-                    <td class="py-2.5 text-slate-500">${p.packSize}</td>
-                    <td class="py-2.5 font-bold text-slate-700 dark:text-slate-300">${p.totalQty} units</td>
-                    <td class="py-2.5 text-right font-black text-tealbrand-700 dark:text-tealbrand-400">৳${p.totalRevenue.toLocaleString()}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 5. INVENTORY & STOCK VALUATION REPORT -->
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <div class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600"><i data-lucide="archive" class="w-4 h-4"></i></div>
-              <h3 class="font-extrabold text-sm sm:text-base">${store.t('inventoryReport')}</h3>
-            </div>
-            <button onclick="window.ReportActions.exportStock()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>${store.t('exportExcel')}</span>
-            </button>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
-                  <th class="pb-2">SKU</th>
-                  <th class="pb-2">Product</th>
-                  <th class="pb-2">Current Stock</th>
-                  <th class="pb-2">Unit TP</th>
-                  <th class="pb-2 text-right">Total TP Valuation (৳)</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                ${store.db.products.map(p => `
-                  <tr class="hover:bg-slate-50/50">
-                    <td class="py-2 font-mono text-slate-400">${p.sku}</td>
-                    <td class="py-2 font-bold">${p.name}</td>
-                    <td class="py-2">
-                      <span class="font-bold ${p.stock < 10 ? 'text-rose-600 font-black' : ''}">${p.stock}</span>
+              <tbody id="prodReportTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                ${prodSalesList.length === 0 ? `
+                  <tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">
+                    ${isBN ? 'কোন পণ্য বিক্রয় রেকর্ড নেই' : 'No product sales records found'}
+                  </td></tr>
+                ` : prodSalesList.map(p => `
+                  <tr class="prod-report-row hover:bg-slate-50/50 dark:hover:bg-slate-800/40" data-name="${p.name.toLowerCase()}">
+                    <td class="py-3 font-bold text-slate-900 dark:text-white">${p.name}</td>
+                    <td class="py-3 text-slate-500">${p.packSize}</td>
+                    <td class="py-3 font-mono font-semibold text-slate-700 dark:text-slate-300">৳${p.unitPrice || 0}</td>
+                    <td class="py-3 font-bold text-tealbrand-700 dark:text-tealbrand-400">
+                      ${isBN ? `${p.totalQty} টি` : `${p.totalQty} units`}
                     </td>
-                    <td class="py-2">৳${p.tradePrice}</td>
-                    <td class="py-2 text-right font-black">৳${(p.stock * p.tradePrice).toLocaleString()}</td>
+                    <td class="py-3 text-right font-black text-slate-900 dark:text-white">৳${p.totalRevenue.toLocaleString()}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
           </div>
         </div>
+
+        <!-- 4. ADMIN-ONLY REPORTS (SR Ranking & Inventory Valuation) -->
+        ${!isSR ? `
+          <!-- SR-WISE SALES REPORT -->
+          <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <div class="p-2 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600"><i data-lucide="trophy" class="w-4 h-4"></i></div>
+                <div>
+                  <h3 class="font-extrabold text-sm sm:text-base">${store.t('srWiseReport')}</h3>
+                  <p class="text-[11px] text-slate-400">Territory performance and monthly sales target achievements</p>
+                </div>
+              </div>
+              <button onclick="window.ReportActions.exportSRWise()" class="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Export SR Report (.xlsx)</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
+                    <th class="pb-2">SR ID</th>
+                    <th class="pb-2">SR Name</th>
+                    <th class="pb-2">Territory</th>
+                    <th class="pb-2">Monthly Target (৳)</th>
+                    <th class="pb-2">Orders Placed</th>
+                    <th class="pb-2">Units Sold</th>
+                    <th class="pb-2">Achieved Sales (৳)</th>
+                    <th class="pb-2 text-right">Target Progress</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                  ${srReportList.map(sr => `
+                    <tr class="sr-report-row hover:bg-slate-50/50" data-name="${sr.name.toLowerCase()}" data-id="${sr.id.toLowerCase()}">
+                      <td class="py-3 font-mono font-bold text-brand-700 dark:text-brand-400">${sr.id}</td>
+                      <td class="py-3 font-bold text-slate-900 dark:text-white">
+                        ${sr.name}
+                        <div class="text-[10px] text-slate-400 font-normal font-mono">${sr.phone}</div>
+                      </td>
+                      <td class="py-3 text-slate-600 dark:text-slate-300">${sr.territory}</td>
+                      <td class="py-3 font-mono text-slate-500">৳${sr.target.toLocaleString()}</td>
+                      <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${sr.orderCount} orders</td>
+                      <td class="py-3 text-slate-500">${sr.totalItems} units</td>
+                      <td class="py-3 font-black text-brand-700 dark:text-brand-400">৳${sr.totalAmount.toLocaleString()}</td>
+                      <td class="py-3 text-right">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          sr.achievementPct >= 80 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
+                          (sr.achievementPct >= 50 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300')
+                        }">
+                          ${sr.achievementPct}%
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- INVENTORY & STOCK VALUATION REPORT -->
+          <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <div class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600"><i data-lucide="archive" class="w-4 h-4"></i></div>
+                <h3 class="font-extrabold text-sm sm:text-base">${store.t('inventoryReport')}</h3>
+              </div>
+              <button onclick="window.ReportActions.exportStock()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>${store.t('exportExcel')}</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
+                    <th class="pb-2">SKU</th>
+                    <th class="pb-2">Product</th>
+                    <th class="pb-2">Current Stock</th>
+                    <th class="pb-2">Unit TP</th>
+                    <th class="pb-2 text-right">Total TP Valuation (৳)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                  ${store.db.products.map(p => `
+                    <tr class="hover:bg-slate-50/50">
+                      <td class="py-2 font-mono text-slate-400">${p.sku}</td>
+                      <td class="py-2 font-bold">${p.name}</td>
+                      <td class="py-2">
+                        <span class="font-bold ${p.stock < 10 ? 'text-rose-600 font-black' : ''}">${p.stock}</span>
+                      </td>
+                      <td class="py-2">৳${p.tradePrice}</td>
+                      <td class="py-2 text-right font-black">৳${(p.stock * p.tradePrice).toLocaleString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ''}
 
       </div>
     `;
+  }
+
+  attachSearchListener() {
+    const input = document.getElementById('reportSearchInput') as HTMLInputElement | null;
+    const clearBtn = document.getElementById('clearReportSearchBtn');
+
+    if (!input) return;
+
+    const performFilter = (query: string) => {
+      const q = query.trim().toLowerCase();
+
+      // Filter Day-wise rows
+      const dayRows = document.querySelectorAll<HTMLElement>('.day-report-row');
+      dayRows.forEach(row => {
+        const date = row.getAttribute('data-date') || '';
+        row.style.display = (!q || date.includes(q)) ? '' : 'none';
+      });
+
+      // Filter Customer-wise rows
+      const custRows = document.querySelectorAll<HTMLElement>('.cust-report-row');
+      custRows.forEach(row => {
+        const id = row.getAttribute('data-id') || '';
+        const name = row.getAttribute('data-name') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        const territory = row.getAttribute('data-territory') || '';
+
+        const matches = !q || id.includes(q) || name.includes(q) || phone.includes(q) || territory.includes(q);
+        row.style.display = matches ? '' : 'none';
+      });
+
+      // Filter Product-wise rows
+      const prodRows = document.querySelectorAll<HTMLElement>('.prod-report-row');
+      prodRows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        row.style.display = (!q || name.includes(q)) ? '' : 'none';
+      });
+
+      if (clearBtn) {
+        if (q) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+    };
+
+    input.addEventListener('input', (e) => {
+      performFilter((e.target as HTMLInputElement).value);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') input.blur();
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        performFilter('');
+        input.focus();
+      });
+    }
   }
 
   exportSRWiseToExcel(showToast: (m: string) => void) {
@@ -380,10 +632,20 @@ export class ReportModule {
     const XLSX = (window as any).XLSX;
     if (!XLSX) return;
 
-    const orders = store.db.orders;
+    const isSR = store.authSession.role !== 'admin';
+    const currentSrId = store.authSession.user?.id || 'SR01';
+
+    const orders = isSR 
+      ? store.db.orders.filter(o => o.srId === currentSrId) 
+      : store.db.orders;
+
+    const customers = isSR
+      ? store.db.customers.filter(c => (c.assignedSrId || c.createdBy) === currentSrId)
+      : store.db.customers;
+
     const custMap: Record<string, any> = {};
 
-    store.db.customers.forEach(c => {
+    customers.forEach(c => {
       custMap[c.id] = {
         'Customer ID': c.id,
         'Shop / Farm Name': c.shopName,
@@ -410,7 +672,10 @@ export class ReportModule {
     const ws = XLSX.utils.json_to_sheet(Object.values(custMap));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Customer_Wise_Sales");
-    XLSX.writeFile(wb, `BH_Agro_Customer_Wise_Sales_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const filename = isSR 
+      ? `BH_Agro_Customer_Wise_Sales_${currentSrId}_${new Date().toISOString().split('T')[0]}.xlsx`
+      : `BH_Agro_Customer_Wise_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
     showToast("Customer-wise sales report exported to Excel!");
   }
 
@@ -418,9 +683,17 @@ export class ReportModule {
     const XLSX = (window as any).XLSX;
     if (!XLSX) return;
 
-    const rows = store.db.orders.map(o => ({
+    const isSR = store.authSession.role !== 'admin';
+    const currentSrId = store.authSession.user?.id || 'SR01';
+
+    const orders = isSR 
+      ? store.db.orders.filter(o => o.srId === currentSrId) 
+      : store.db.orders;
+
+    const rows = orders.map(o => ({
       'Order ID': o.id,
       'Date': o.date,
+      'SR ID': o.srId,
       'SR Name': o.srName,
       'Customer ID': o.customerId,
       'Customer / Farm': o.customerShopName || o.customerName,
@@ -434,7 +707,10 @@ export class ReportModule {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Daywise_Sales");
-    XLSX.writeFile(wb, `BH_Agro_Daywise_Sales_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const filename = isSR 
+      ? `BH_Agro_Daywise_Sales_${currentSrId}_${new Date().toISOString().split('T')[0]}.xlsx`
+      : `BH_Agro_Daywise_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
     showToast("Day-wise sales exported to Excel!");
   }
 
@@ -442,8 +718,15 @@ export class ReportModule {
     const XLSX = (window as any).XLSX;
     if (!XLSX) return;
 
+    const isSR = store.authSession.role !== 'admin';
+    const currentSrId = store.authSession.user?.id || 'SR01';
+
+    const orders = isSR 
+      ? store.db.orders.filter(o => o.srId === currentSrId) 
+      : store.db.orders;
+
     const prodMap: Record<string, any> = {};
-    store.db.orders.forEach(o => {
+    orders.forEach(o => {
       o.items.forEach(it => {
         if (!prodMap[it.name]) {
           prodMap[it.name] = { 'Product Name': it.name, 'Pack Size': it.packSize, 'Unit TP': it.tp, 'Total Quantity Sold': 0, 'Total Revenue (BDT)': 0 };
@@ -455,7 +738,10 @@ export class ReportModule {
     const ws = XLSX.utils.json_to_sheet(Object.values(prodMap));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Product_Sales");
-    XLSX.writeFile(wb, `BH_Agro_Product_Sales_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const filename = isSR 
+      ? `BH_Agro_Product_Sales_${currentSrId}_${new Date().toISOString().split('T')[0]}.xlsx`
+      : `BH_Agro_Product_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
     showToast("Product sales exported to Excel!");
   }
 

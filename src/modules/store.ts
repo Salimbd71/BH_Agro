@@ -91,135 +91,44 @@ export interface AdminUser {
   pin?: string;
 }
 
-export const DB_STORAGE_KEY = 'bioherbs_agrovet_db_v3';
+export const DB_STORAGE_KEY = 'bioherbs_agrovet_db_v5';
 export const FIREBASE_CONFIG_KEY = 'bioherbs_agrovet_fb_config';
 export const PREF_LANG_KEY = 'bioherbs_lang';
 export const PREF_THEME_KEY = 'bioherbs_theme';
-export const SESSION_AUTH_KEY = 'bioherbs_auth_session';
+export const SESSION_AUTH_KEY = 'bioherbs_auth_session_v5';
 
-export const INITIAL_SR_LIST: SRUser[] = [
-  { id: 'SR01', username: 'rafiq_sr', password: '123', name: 'Md. Rafiqul Islam', bnName: 'মোঃ রফিকুল ইসলাম', phone: '01711-234567', territory: 'Gazipur (শ্রীপুর-জয়দেবপুর)', email: 'rafiq.sr@bhagroltd.com', target: 350000, active: true },
-  { id: 'SR02', username: 'tanvir_sr', password: '123', name: 'Tanvir Ahmed', bnName: 'তানভীর আহমেদ', phone: '01822-345678', territory: 'Bogura Dairy Zone (শেরপুর)', email: 'tanvir.sr@bhagroltd.com', target: 420000, active: true },
-  { id: 'SR03', username: 'kamrul_sr', password: '123', name: 'Kamrul Hasan', bnName: 'কামরুল হাসান', phone: '01933-456789', territory: 'Mymensingh Poultry Belt (ভালুকা)', email: 'kamrul.sr@bhagroltd.com', target: 380000, active: true },
-];
-
-export const ADMIN_USER: AdminUser = {
-  id: 'ADMIN01',
-  username: 'admin',
-  password: '123',
-  name: 'Dr. Nazmul Huda',
-  bnName: 'ডাঃ নাজমুল হুদা',
-  phone: '01700-112233',
-  territory: 'Head Office (Dhaka Central)',
-  email: 'admin@bhagroltd.com',
-  role: 'admin'
-};
-
-export const INITIAL_PRODUCTS: Product[] = [
-  // Antibiotics
-  { id: 'PROD-01', name: 'Ciprovet-Vet 100ml', bnName: 'সিপ্রোভেট-ভেট ১০০ মি.লি.', sku: 'BHA-ANT-001', category: 'antibiotics', packSize: '100 ml Bottle', tradePrice: 280, mrp: 330, stock: 240, tradeOffer: '10+1 Free', batchNo: 'B26-084', dosage: 'Poultry: 1ml / 2L water' },
-  { id: 'PROD-02', name: 'Amoxicillin-Vet 100g WSP', bnName: 'অ্যামোক্সিসিলিন-ভেট ১০০ গ্রাম', sku: 'BHA-ANT-002', category: 'antibiotics', packSize: '100 gm Sachet', tradePrice: 350, mrp: 410, stock: 180, tradeOffer: '5% Cash Discount', batchNo: 'B26-092', dosage: 'Broiler & Layer bacterial cure' },
-  { id: 'PROD-03', name: 'Colistin DS Powder 100g', bnName: 'কলিস্টিন ডিএস পাউডার ১০০ গ্রাম', sku: 'BHA-ANT-003', category: 'antibiotics', packSize: '100 gm Pack', tradePrice: 420, mrp: 495, stock: 120, tradeOffer: '20+2 Free', batchNo: 'B26-077', dosage: 'Specific for E. coli & Salmonella' },
-  { id: 'PROD-04', name: 'Oxyvet LA Inj 50ml', bnName: 'অক্সিভেট এলএ ইনজেকশন ৫০ মি.লি.', sku: 'BHA-ANT-004', category: 'antibiotics', packSize: '50 ml Vial', tradePrice: 260, mrp: 310, stock: 95, tradeOffer: '15+1 Free', batchNo: 'B26-105', dosage: 'Long acting cattle antibiotic' },
-  { id: 'PROD-05', name: 'Gentasol-Vet 100ml', bnName: 'জেন্টাসল-ভেট ১০০ মি.লি.', sku: 'BHA-ANT-005', category: 'antibiotics', packSize: '100 ml Vial', tradePrice: 195, mrp: 235, stock: 6, tradeOffer: 'Standard', batchNo: 'B26-061', dosage: 'Broad spectrum injectable' },
-
-  // Vaccines
-  { id: 'PROD-06', name: 'Bio-Gumboro Live (1000D)', bnName: 'বায়ো-গামবোরো লাইভ (১০০০ ডোজ)', sku: 'BHA-VAC-001', category: 'vaccines', packSize: '1000 Dose Vial', tradePrice: 450, mrp: 520, stock: 300, tradeOffer: 'Strict Cold Chain', batchNo: 'VAC-26-03', dosage: 'Poultry IBD protection' },
-  { id: 'PROD-07', name: 'ND Clone 30 Lasota (1000D)', bnName: 'এনডি ক্লোন ৩০ লাসোটা (১০০০ ডোজ)', sku: 'BHA-VAC-002', category: 'vaccines', packSize: '1000 Dose Vial', tradePrice: 380, mrp: 440, stock: 250, tradeOffer: 'Cold Chain', batchNo: 'VAC-26-09', dosage: 'Newcastle Disease prevention' },
-  { id: 'PROD-08', name: 'Bio-FMD Inactivated (50D)', bnName: 'বায়ো-এফএমডি ভ্যাকসিন (৫০ ডোজ)', sku: 'BHA-VAC-003', category: 'vaccines', packSize: '100 ml Vial', tradePrice: 1850, mrp: 2150, stock: 65, tradeOffer: 'Free Icebox with 5 vials', batchNo: 'VAC-26-14', dosage: 'Cattle Foot & Mouth Disease' },
-  { id: 'PROD-09', name: 'Anthrax Spore Vaccine (50D)', bnName: 'অ্যানথ্রাক্স স্পোর ভ্যাকসিন (৫০ ডোজ)', sku: 'BHA-VAC-004', category: 'vaccines', packSize: '50 ml Vial', tradePrice: 320, mrp: 390, stock: 4, tradeOffer: 'Cold Chain', batchNo: 'VAC-26-02', dosage: 'Cattle & Sheep anthrax control' },
-
-  // Feed Supplements & Vitamins
-  { id: 'PROD-10', name: 'Bio-CalPlex 5 Litre', bnName: 'বায়ো-ক্যালপ্লেক্স ৫ লিটার', sku: 'BHA-SUP-001', category: 'supplements', packSize: '5 Litre Jar', tradePrice: 820, mrp: 980, stock: 140, tradeOffer: 'Buy 5 Jars get 1 Mineral 1kg Free', batchNo: 'SUP-26-44', dosage: 'High potency Dairy Calcium + D3' },
-  { id: 'PROD-11', name: 'Aminovit Plus Liquid 1L', bnName: 'অ্যামিনোভিট প্লাস লিকুইড ১ লি.', sku: 'BHA-SUP-002', category: 'supplements', packSize: '1 Litre Bottle', tradePrice: 650, mrp: 770, stock: 210, tradeOffer: '12+1 Free', batchNo: 'SUP-26-52', dosage: 'Essential Amino Acids & Multivitamin' },
-  { id: 'PROD-12', name: 'Hepato-Care Liquid 1L', bnName: 'হেপাটো-কেয়ার লিকুইড ১ লিটার', sku: 'BHA-SUP-003', category: 'supplements', packSize: '1 Litre Bottle', tradePrice: 480, mrp: 575, stock: 165, tradeOffer: '10+1 Free', batchNo: 'SUP-26-38', dosage: 'Herbal Liver tonic & Antitoxin' },
-  { id: 'PROD-13', name: 'Toxi-Bind Powder 1kg', bnName: 'টক্সি-বাইন্ড পাউডার ১ কেজি', sku: 'BHA-SUP-004', category: 'supplements', packSize: '1 kg Foil Pack', tradePrice: 390, mrp: 460, stock: 190, tradeOffer: '20+2 Free', batchNo: 'SUP-26-81', dosage: 'Mycotoxin binder with MOS' },
-  { id: 'PROD-14', name: 'Bio-Electrolyte WS 500g', bnName: 'বায়ো-ইলেক্ট্রোলাইট ডব্লিউএস ৫০০ গ্রাম', sku: 'BHA-SUP-005', category: 'supplements', packSize: '500 gm Pack', tradePrice: 210, mrp: 255, stock: 320, tradeOffer: '25+3 Free', batchNo: 'SUP-26-90', dosage: 'Heat stress relief for poultry & dairy' },
-
-  // Dewormers
-  { id: 'PROD-15', name: 'Albendazole-Vet Bolus (10x4)', bnName: 'অ্যালবেনডাজল-ভেট বোলাস', sku: 'BHA-DEW-001', category: 'dewormers', packSize: 'Box of 40 Bolus', tradePrice: 380, mrp: 450, stock: 110, tradeOffer: '10+1 Free', batchNo: 'DEW-26-11', dosage: 'Broad spectrum dewormer' },
-  { id: 'PROD-16', name: 'Levamisole + Tricla 100ml', bnName: 'লেভামিসল + ট্রাইক্লা ১০০ মি.লি.', sku: 'BHA-DEW-002', category: 'dewormers', packSize: '100 ml Bottle', tradePrice: 290, mrp: 345, stock: 85, tradeOffer: '15+1 Free', batchNo: 'DEW-26-24', dosage: 'Liver fluke & roundworm cure' },
-  { id: 'PROD-17', name: 'Ivervet 1% Inj 50ml', bnName: 'আইভারভেট ১% ইনজেকশন ৫০ মি.লি.', sku: 'BHA-DEW-003', category: 'dewormers', packSize: '50 ml Vial', tradePrice: 340, mrp: 410, stock: 130, tradeOffer: '10+1 Free', batchNo: 'DEW-26-30', dosage: 'Endo & Ectoparasiticide' },
-];
-
-export const INITIAL_CUSTOMERS: Customer[] = [
-  { id: 'BH0001', name: 'Haji Nurul Islam', shopName: 'Green Valley Dairy Farm', bnShopName: 'গ্রিন ভ্যালি ডেইরি ফার্ম', phone: '01712-349876', category: 'dairy_farm', address: 'Bhawal Mirzapur, Gazipur Sadar, Gazipur', territory: 'Gazipur (শ্রীপুর-জয়দেবপুর)', status: 'approved', creditLimit: 150000, balance: 24500, createdBy: 'SR01', assignedSrId: 'SR01' },
-  { id: 'BH0002', name: 'Md. Aminul Islam', shopName: 'Amin Feed', bnShopName: 'আমিন ফিড', phone: '01718-554433', category: 'feed_mill', address: '1/2 bonani, bogura', territory: 'Bogura Dairy Zone (শেরপুর)', status: 'approved', creditLimit: 250000, balance: 35000, createdBy: 'SR02', assignedSrId: 'SR02' },
-  { id: 'BH0003', name: 'Dr. Shahinur Rahman', shopName: 'Bhai Bhai Veterinary Pharmacy', bnShopName: 'ভাই ভাই ভেটেরিনারি ফার্মেসি', phone: '01911-887766', category: 'pharmacy', address: 'Medical Mor, Trishal, Mymensingh', territory: 'Mymensingh Poultry Belt (ভালুকা)', status: 'approved', creditLimit: 200000, balance: 48000, createdBy: 'SR03', assignedSrId: 'SR03' },
-  { id: 'BH0004', name: 'Tariqul Anam', shopName: 'Sonali Agro Poultry Complex', bnShopName: 'সোনালী এগ্রো পোল্ট্রি কমপ্লেক্স', phone: '01819-223344', category: 'poultry_farm', address: 'Sherpur Road, Bogura Sadar, Bogura', territory: 'Bogura Dairy Zone (শেরপুর)', status: 'approved', creditLimit: 120000, balance: 12000, createdBy: 'SR02', assignedSrId: 'SR02' },
-  { id: 'BH0005', name: 'Al-Haj Mosharraf Hossain', shopName: 'Bismillah Feed & Poultry Centre', bnShopName: 'বিসমিল্লাহ ফিড ও পোল্ট্রি সেন্টার', phone: '01715-998877', category: 'feed_mill', address: 'Masterbari, Sreepur, Gazipur', territory: 'Gazipur (শ্রীপুর-জয়দেবপুর)', status: 'approved', creditLimit: 300000, balance: 75000, createdBy: 'SR01', assignedSrId: 'SR01' },
-  { id: 'REQ-01', name: 'Khorshed Alam', shopName: 'Popular Agro Vet Corner', bnShopName: 'পপুলার এগ্রো ভেট কর্নার', phone: '01733-441122', category: 'pharmacy', address: 'Bazar Road, Valuka, Mymensingh', territory: 'Mymensingh Poultry Belt (ভালুকা)', status: 'pending', creditLimit: 80000, balance: 0, createdBy: 'SR03', assignedSrId: 'SR03', createdAt: '2026-11-05' }
-];
-
-export const INITIAL_ORDERS: Order[] = [
-  {
-    id: 'BHA-ORD-202611-001',
-    date: '2026-11-04',
-    srId: 'SR01',
-    srName: 'Md. Rafiqul Islam',
-    customerId: 'BH0001',
-    customerShopName: 'Green Valley Dairy Farm',
-    customerName: 'Haji Nurul Islam',
-    customerAddress: 'Bhawal Mirzapur, Gazipur Sadar, Gazipur',
-    territory: 'Gazipur (শ্রীপুর-জয়দেবপুর)',
-    items: [
-      { productId: 'PROD-10', name: 'Bio-CalPlex 5 Litre', packSize: '5 Litre Jar', qty: 10, freeQty: 2, tp: 820, total: 8200 },
-      { productId: 'PROD-12', name: 'Hepato-Care Liquid 1L', packSize: '1 Litre Bottle', qty: 10, freeQty: 1, tp: 480, total: 4800 },
-      { productId: 'PROD-15', name: 'Albendazole-Vet Bolus (10x4)', packSize: 'Box of 40 Bolus', qty: 5, freeQty: 0, tp: 380, total: 1900 },
-    ],
-    subtotal: 14900,
-    discount: 400,
-    grandTotal: 14500,
-    status: 'confirmed',
-    paymentStatus: 'Credit Account',
-    notes: 'Priority delivery for dairy farm milk-fever protection.'
-  },
-  {
-    id: 'BHA-ORD-202611-002',
-    date: '2026-11-05',
-    srId: 'SR02',
-    srName: 'Tanvir Ahmed',
-    customerId: 'BH0002',
-    customerShopName: 'Amin Feed',
-    customerName: 'Md. Aminul Islam',
-    customerAddress: '1/2 bonani, bogura',
-    territory: 'Bogura Dairy Zone (শেরপুর)',
-    items: [
-      { productId: 'PROD-01', name: 'Ciprovet-Vet 100ml', packSize: '100 ml Bottle', qty: 20, freeQty: 2, tp: 280, total: 5600 },
-      { productId: 'PROD-06', name: 'Bio-Gumboro Live (1000D)', packSize: '1000 Dose Vial', qty: 15, freeQty: 0, tp: 450, total: 6750 },
-      { productId: 'PROD-14', name: 'Bio-Electrolyte WS 500g', packSize: '500 gm Pack', qty: 25, freeQty: 3, tp: 210, total: 5250 },
-    ],
-    subtotal: 17600,
-    discount: 600,
-    grandTotal: 17000,
-    status: 'confirmed',
-    paymentStatus: 'Credit Account',
-    notes: 'Bulk feed supplement order for Bogura layer farm.'
-  }
-];
+// Default clean state: No mock SRs, No mock Admin, No mock Customers, No mock Orders
+export const INITIAL_SR_LIST: SRUser[] = [];
+export const INITIAL_PRODUCTS: Product[] = [];
+export const INITIAL_CUSTOMERS: Customer[] = [];
+export const INITIAL_ORDERS: Order[] = [];
 
 export const I18N: Record<string, Record<string, string>> = {
   en: {
     appName: 'BH Agro Ltd.',
-    tagline: 'Veterinary Pharmaceuticals & Animal Health',
+    tagline: 'Veterinary Pharmaceuticals & Animal Health ERP',
     dashboard: 'Dashboard',
     orderBooking: 'Order Booking',
-    customerList: 'Customer List',
+    customerList: 'Customer Directory',
+    homeCustomers: 'Home & Customers',
+    medicinesList: 'Medicines Catalog',
+    stockManage: 'Stock Management',
+    ordersManagement: 'All Orders & Invoicing',
     addCustomer: 'Request New Customer',
     pendingApprovals: 'Customer Approvals',
     productsInventory: 'Products & Inventory',
-    pricingManager: 'Price & Discount Manager',
+    pricingManager: 'Price & Discounts',
     srWiseReport: 'SR-wise Sales Report',
     customerWiseReport: 'Customer-wise Sales Report',
-    srManagement: 'SR Accounts (Create ID)',
-    reportsAnalytics: 'Reports & Analytics',
+    srManagement: 'SR Accounts Management',
+    reportsAnalytics: 'Sales Reports & Analytics',
     dbSettings: 'Firebase Realtime DB',
     logout: 'Log Out',
     roleSR: 'Field Sales Rep (SR)',
     roleAdmin: 'Central Admin',
     currentRole: 'Active Profile',
     onlineFirebase: 'Firebase Online 🟢',
-    localDemo: 'Local Offline Demo 🟡',
+    localDemo: 'Local Offline 🟡',
     todayBooking: "Today's Orders",
     monthlyRevenue: 'Monthly Sales',
     approvedCustomers: 'Active Customers',
@@ -231,24 +140,25 @@ export const I18N: Record<string, Record<string, string>> = {
     categorySupplements: 'Feed Supplements',
     categoryDewormers: 'Dewormers',
     searchPlaceholder: 'Search medicines by name or SKU...',
-    searchCustomerPlaceholder: 'Search customer by ID (e.g. BH0002) or Name...',
+    searchCustomerPlaceholder: 'Search customer by ID, shop name or mobile...',
     cartTitle: 'Order Slip / Cart',
     emptyCart: 'No medicines added to cart yet',
     selectCustomer: 'Select Customer',
     orderSummary: 'Order Summary',
-    subtotal: 'Subtotal (TP)',
-    discount: 'Special Discount (৳)',
-    vat: 'VAT (0% Vet Exemption)',
+    subtotal: 'Subtotal (Trade Price)',
+    discount: 'Special Discount (BDT)',
+    vat: 'VAT (0% Animal Health Exemption)',
     grandTotal: 'Net Payable Amount',
     submitOrder: 'Confirm & Place Order',
     inStock: 'In Stock',
-    lowStock: 'Low Stock',
-    tradeOffer: 'Offer',
-    unitTP: 'Trade Price',
+    lowStock: 'Low Stock (< 10)',
+    outOfStock: 'Out of Stock',
+    tradeOffer: 'Special Offer',
+    unitTP: 'Trade Price (TP)',
     mrp: 'M.R.P.',
     freeQty: 'Free Items',
     statusConfirmed: 'Confirmed',
-    statusPending: 'Pending Admin',
+    statusPending: 'Pending Approval',
     statusApproved: 'Approved',
     exportExcel: 'Export to Excel (.xlsx)',
     uploadExcel: 'Upload Products Excel',
@@ -262,46 +172,113 @@ export const I18N: Record<string, Record<string, string>> = {
     cancel: 'Cancel',
     customerName: 'Proprietor / Doctor Name',
     shopName: 'Farm / Shop / Pharmacy Name',
-    phone: 'Mobile Number',
+    phone: 'Mobile Phone',
     category: 'Category',
     address: 'Full Address',
-    territory: 'Sales Territory',
+    territory: 'Territory / Area',
     creditLimit: 'Credit Limit (BDT)',
-    balance: 'Current Balance',
+    balance: 'Current Balance (BDT)',
     filterDate: 'Filter Date',
     filterCategory: 'Category Filter',
-    daywiseSales: 'Day-wise Sales Report (All SRs)',
+    daywiseSales: 'Day-wise Sales Report',
     productwiseSales: 'Product-wise Sales Analysis',
     inventoryReport: 'Storage & Stock Valuation',
-    resetDemo: 'Reset / Seed Demo Data',
+    resetDemo: 'Clear Local Cache',
     srStaffId: 'SR ID',
-    srUsername: 'SR Username',
+    srUsername: 'Username',
     srPassword: 'Password',
-    monthlyTarget: 'Monthly Target (৳)',
+    monthlyTarget: 'Monthly Sales Target (BDT)',
     addSR: 'Create New SR Account',
     dairyFarm: 'Dairy Farm',
     poultryFarm: 'Poultry Farm',
     pharmacy: 'Vet Pharmacy',
     feedMill: 'Feed Mill & Dealer',
-    target: 'Target',
+    target: 'Monthly Target',
     achievement: 'Achievement',
-    todayBookingCount: "Today's Orders",
-    todayBookingValue: "Today's Value",
+    todayBookingCount: "Today's Orders Count",
+    todayBookingValue: "Today's Booking Value",
+    units: 'Units',
+    pcs: 'Pcs',
+    welcome: 'Welcome',
+    createFirstAdmin: 'Create Initial Admin Account',
+    noAdminFound: 'No Admin account found in database. Create one to get started.',
+    noSrFound: 'No SR accounts registered yet in database.',
+    syncFromDb: 'Sync from Database',
+    connectFirebase: 'Connect Firebase Database',
+    databaseSynced: 'Database Synced',
+    fieldSalesReport: 'Field Sales Report',
+    centralSalesReport: 'Central Sales & Analytics Control',
+    allSrsAndTerritories: 'All SRs and Territory Performance',
+    srTerritorySales: 'Territory daily, customer-wise and product sales',
+    daywiseReportTitle: '1. Day-wise Sales Report',
+    daywiseReportSubtitle: 'Total orders, units, and sales revenue grouped by date',
+    custwiseReportTitle: '2. Customer-wise Sales Report',
+    custwiseReportSubtitle: 'All customers with order count, purchase volume, and balance due',
+    prodwiseReportTitle: '3. Product-wise Sales Analysis',
+    prodwiseReportSubtitle: 'Sold medicine quantities and gross revenue breakdown',
+    dateCol: 'Date',
+    ordersCol: 'Orders Count',
+    unitsCol: 'Units Sold',
+    amountCol: 'Total Sales (BDT)',
+    customerCol: 'Customer / Farm Name',
+    proprietorCol: 'Proprietor',
+    dueBalanceCol: 'Due Balance',
+    productNameCol: 'Product Name',
+    packSizeCol: 'Pack Size',
+    rateCol: 'Rate (TP)',
+    quantityCol: 'Quantity Sold',
+    revenueCol: 'Total Revenue',
+    filterReportsPlaceholder: 'Search reports by date, customer name, mobile, or medicine...',
+    monthlyTargetProgress: 'Monthly Target Progress',
+    totalRevenue: 'Total Booked Sales',
+    totalOrdersCount: 'Total Orders Placed',
+    totalUnitsDelivered: 'Total Units Delivered',
+    totalAssignedCustomers: 'Registered Customers',
+    bookProduct: 'Book Product',
+    quickOrder: 'Quick Order',
+    allCategories: 'All Categories',
+    emergencyRestock: 'Emergency Restock Needed',
+    warehouseTotal: 'Warehouse Total Stock',
+    tradePriceValuation: 'Trade Price Valuation',
+    stockManagementTitle: 'Stock Management & Inventory',
+    stockManagementSubtitle: 'Directly adjust medicine stock levels. Changes sync with database instantly.',
+    addNewProduct: '+ Add New Product',
+    totalMedicineItems: 'Total Medicine Items',
+    totalStockUnits: 'Total Stock Units',
+    lowStockItems: 'Low Stock Items (<10)',
+    totalInventoryValuation: 'Total Inventory Valuation (TP)',
+    showingMedicines: 'Showing {count} medicines',
+    showingCustomers: 'Showing {count} customers',
+    showingSrs: 'Showing {count} Field SR Accounts',
+    template: 'Download Template',
+    importExcel: 'Import Excel',
+    createAdminBtn: '+ Create Admin',
+    systemAdmins: 'System Admin Accounts',
+    assignedSrRep: 'Assigned SR Rep:',
+    filterBySR: 'Filter by SR:',
+    allSRsOption: 'All SRs',
+    assignedToYou: 'Assigned to You',
+    noCustomersAssigned: 'No Customers Assigned',
+    noCustomersAssignedSub: 'Please request new customer registration or have admin assign customers to your SR ID.',
   },
   bn: {
     appName: 'বিএইচ এগ্রো লি.',
-    tagline: 'ভেটেরিনারি ওষুধ ও প্রাণিস্বাস্থ্য পণ্য',
+    tagline: 'ভেটেরিনারি ওষুধ ও প্রাণিস্বাস্থ্য পণ্য ইআরপি',
     dashboard: 'ড্যাশবোর্ড',
     orderBooking: 'অর্ডার বুকিং',
     customerList: 'গ্রাহকের তালিকা',
+    homeCustomers: 'হোম ও গ্রাহক তালিকা',
+    medicinesList: 'ওষুধের তালিকা',
+    stockManage: 'স্টক ম্যানেজমেন্ট',
+    ordersManagement: 'সকল অর্ডার ও ইনভয়েস',
     addCustomer: 'নতুন গ্রাহক আবেদন',
     pendingApprovals: 'গ্রাহক অনুমোদন',
     productsInventory: 'পণ্য ও ইনভেন্টরি',
-    pricingManager: 'মূল্য ও ডিসকাউন্ট ম্যানেজার',
+    pricingManager: 'মূল্য ও ডিসকাউন্ট',
     srWiseReport: 'এসআরভিত্তিক বিক্রয় রিপোর্ট',
     customerWiseReport: 'গ্রাহকভিত্তিক বিক্রয় রিপোর্ট',
-    srManagement: 'এসআর একাউন্ট তৈরি ও ব্যবস্থাপনা',
-    reportsAnalytics: 'রিপোর্ট ও সেলস',
+    srManagement: 'এসআর একাউন্টস',
+    reportsAnalytics: 'সেলস রিপোর্ট ও বিশ্লেষণ',
     dbSettings: 'ফায়ারবেস ডাটাবেস',
     logout: 'লগআউট',
     roleSR: 'ফিল্ড সেলস রিপ্রেজেন্টেটিভ (এসআর)',
@@ -319,20 +296,21 @@ export const I18N: Record<string, Record<string, string>> = {
     categoryVaccines: 'ভ্যাকসিন',
     categorySupplements: 'ফিড সাপ্লিমেন্ট ও ভিটামিন',
     categoryDewormers: 'কৃমিনাশক (ডিওয়ার্মার)',
-    searchPlaceholder: 'ওষুধের নাম বা এসকেইউ খুঁজুন...',
-    searchCustomerPlaceholder: 'আইডি (যেমন: BH0002) অথবা ফার্ম/দোকানের নাম দিয়ে খুঁজুন...',
+    searchPlaceholder: 'ওষুধের নাম বা এসকেইউ কোড দিয়ে খুঁজুন...',
+    searchCustomerPlaceholder: 'আইডি, ফার্মের নাম অথবা মোবাইল দিয়ে খুঁজুন...',
     cartTitle: 'অর্ডার স্লিপ / কার্ট',
     emptyCart: 'কার্টে কোন ওষুধ যোগ করা হয়নি',
     selectCustomer: 'গ্রাহক নির্বাচন করুন',
     orderSummary: 'অর্ডারের বিবরণ',
     subtotal: 'মোট ট্রেড প্রাইস (টিপি)',
-    discount: 'বিশেষ ছাড় (৳)',
+    discount: 'বিশেষ ছাড় (টাকা)',
     vat: 'ভ্যাট (ভেটেরিনারি ভ্যাটমুক্ত)',
     grandTotal: 'সর্বমোট প্রদেয় টাকা',
     submitOrder: 'অর্ডার নিশ্চিত ও সাবমিট করুন',
     inStock: 'মজুদ আছে',
-    lowStock: 'স্বল্প স্টক',
-    tradeOffer: 'অফার',
+    lowStock: 'স্বল্প স্টক (< ১০)',
+    outOfStock: 'স্টক শেষ',
+    tradeOffer: 'বিশেষ অফার',
     unitTP: 'ট্রেড প্রাইস (টিপি)',
     mrp: 'এম.আর.পি.',
     freeQty: 'ফ্রি ওষুধ',
@@ -359,23 +337,86 @@ export const I18N: Record<string, Record<string, string>> = {
     balance: 'বর্তমান বকেয়া (টাকা)',
     filterDate: 'তারিখ নির্বাচন',
     filterCategory: 'ক্যাটাগরি ফিল্টার',
-    daywiseSales: 'দৈনিক সেলস রিপোর্ট (সকল এসআর)',
+    daywiseSales: 'দৈনিক সেলস রিপোর্ট',
     productwiseSales: 'পণ্যভিত্তিক বিক্রয় বিশ্লেষণ',
     inventoryReport: 'গুদাম মজুদ ও স্টক মূল্যায়ন',
-    resetDemo: 'ডেমো ডেটা রিসেট',
+    resetDemo: 'লোকাল ক্যাশ পরিষ্কার',
     srStaffId: 'এসআর আইডি',
     srUsername: 'ইউজারনেম',
     srPassword: 'পাসওয়ার্ড',
-    monthlyTarget: 'মাসিক সেলস টার্গেট (৳)',
+    monthlyTarget: 'মাসিক সেলস টার্গেট (টাকা)',
     addSR: 'নতুন এসআর আইডি তৈরি করুন',
     dairyFarm: 'ডেইরি খামার',
     poultryFarm: 'পোল্ট্রি খামার',
     pharmacy: 'ভেট ফার্মেসি',
     feedMill: 'ফিড মিল ও ডিলার',
-    target: 'টার্গেট',
+    target: 'মাসিক টার্গেট',
     achievement: 'অর্জিত',
     todayBookingCount: 'আজকের মোট অর্ডার',
     todayBookingValue: 'আজকের বুকিং মূল্য',
+    units: 'টি',
+    pcs: 'পিস',
+    welcome: 'স্বাগতম',
+    createFirstAdmin: 'প্রাথমিক অ্যাডমিন একাউন্ট তৈরি করুন',
+    noAdminFound: 'ডাটাবেজে কোনো অ্যাডমিন একাউন্ট পাওয়া যায়নি। শুরু করতে প্রথম অ্যাডমিন তৈরি করুন।',
+    noSrFound: 'ডাটাবেজে কোনো এসআর একাউন্ট নিবন্ধিত নেই।',
+    syncFromDb: 'ডাটাবেস থেকে সিঙ্ক করুন',
+    connectFirebase: 'ফায়ারবেস ডাটাবেস সংযুক্ত করুন',
+    databaseSynced: 'ডাটাবেস সিঙ্ক সম্পন্ন',
+    fieldSalesReport: 'ফিল্ড সেলস রিপোর্ট',
+    centralSalesReport: 'কেন্দ্রীয় সেলস ও অ্যানালিটিক্স কন্ট্রোল',
+    allSrsAndTerritories: 'সকল এসআর ও টেরিটরির লাইভ বিক্রয় বিশ্লেষণ',
+    srTerritorySales: 'টেরিটরির দৈনিক, গ্রাহকভিত্তিক ও পণ্যভিত্তিক বিক্রয় বিবরণী',
+    daywiseReportTitle: '১. দৈনিক সেলস রিপোর্ট',
+    daywiseReportSubtitle: 'তারিখ অনুযায়ী মোট অর্ডার ও বিক্রয়ের বিস্তারিত হিসাব',
+    custwiseReportTitle: '২. গ্রাহকভিত্তিক সেলস রিপোর্ট',
+    custwiseReportSubtitle: 'সকল গ্রাহকের মোট অর্ডার, ক্রয়কৃত ইউনিট ও বকেয়ার বিবরণী',
+    prodwiseReportTitle: '৩. পণ্যভিত্তিক বিক্রয় বিশ্লেষণ',
+    prodwiseReportSubtitle: 'বিক্রিত ওষুধের পরিমাণ ও মোট রাজস্বের বিবরণ',
+    dateCol: 'তারিখ',
+    ordersCol: 'অর্ডার সংখ্যা',
+    unitsCol: 'বিক্রিত ইউনিট',
+    amountCol: 'মোট বিক্রয় (টাকা)',
+    customerCol: 'গ্রাহক / ফার্মের নাম',
+    proprietorCol: 'মালিক',
+    dueBalanceCol: 'বর্তমান বকেয়া',
+    productNameCol: 'ওষুধের নাম',
+    packSizeCol: 'প্যাক সাইজ',
+    rateCol: 'ট্রেড প্রাইস',
+    quantityCol: 'বিক্রিত পরিমাণ',
+    revenueCol: 'মোট রাজস্ব',
+    filterReportsPlaceholder: 'তারিখ, গ্রাহকের নাম, মোবাইল অথবা ওষুধের নাম দিয়ে রিপোর্ট খুঁজুন...',
+    monthlyTargetProgress: 'মাসিক সেলস টার্গেট অগ্রগতি',
+    totalRevenue: 'মোট বুকিং বিক্রয়',
+    totalOrdersCount: 'মোট অর্ডার সংখ্যা',
+    totalUnitsDelivered: 'মোট ওষুধ ইউনিট',
+    totalAssignedCustomers: 'নিবন্ধিত গ্রাহক সংখ্যা',
+    bookProduct: 'অর্ডার স্লিপে নিন',
+    quickOrder: 'দ্রুত বুকিং',
+    allCategories: 'সকল ক্যাটাগরি',
+    emergencyRestock: 'জরুরি রিস্টক প্রয়োজন',
+    warehouseTotal: 'ওয়্যারহাউজ মোট স্টক',
+    tradePriceValuation: 'ট্রেড প্রাইস মূল্যায়ন',
+    stockManagementTitle: 'স্টক কন্ট্রোল ও ম্যানেজমেন্ট',
+    stockManagementSubtitle: 'প্রতিটি ওষুধের মজুদ সরাসরি বাড়ান বা কমান। সাথে সাথে ডাটাবেজে সিঙ্ক হয়।',
+    addNewProduct: '+ নতুন ওষুধ যোগ করুন',
+    totalMedicineItems: 'মোট ওষুধ আইটেম',
+    totalStockUnits: 'মোট মজুদ ইউনিট',
+    lowStockItems: 'স্বল্প স্টক আইটেম (< ১০)',
+    totalInventoryValuation: 'মোট স্টক মূল্য (টিপি)',
+    showingMedicines: 'মোট {count} টি ওষুধ প্রদর্শিত',
+    showingCustomers: 'মোট {count} জন গ্রাহক প্রদর্শিত',
+    showingSrs: 'মোট {count} টি এসআর একাউন্ট',
+    template: 'টেমপ্লেট ডাউনলোড',
+    importExcel: 'এক্সেল ইমপোর্ট',
+    createAdminBtn: '+ নতুন অ্যাডমিন',
+    systemAdmins: 'সিস্টেম অ্যাডমিন একাউন্টস',
+    assignedSrRep: 'নিযুক্ত এসআর:',
+    filterBySR: 'এসআর ফিল্টার:',
+    allSRsOption: 'সকল এসআর',
+    assignedToYou: 'আপনার অধীনে',
+    noCustomersAssigned: 'কোন গ্রাহক পাওয়া যায়নি',
+    noCustomersAssignedSub: 'নতুন গ্রাহক রিকোয়েস্ট পাঠান অথবা অ্যাডমিন থেকে আপনার এসআর আইডিতে গ্রাহক অ্যাসাইন করুন।',
   }
 };
 
@@ -384,7 +425,7 @@ export interface DBState {
   customers: Customer[];
   orders: Order[];
   srs: SRUser[];
-  admins?: AdminUser[];
+  admins: AdminUser[];
   lastUpdated: string;
 }
 
@@ -415,20 +456,27 @@ export class Store {
     this.lang = localStorage.getItem(PREF_LANG_KEY) || 'en'; // Default English
     this.theme = localStorage.getItem(PREF_THEME_KEY) || 'light'; // Default Light
     
-    // Auth session
-    this.authSession = JSON.parse(localStorage.getItem(SESSION_AUTH_KEY) || 'null') || {
-      isLoggedIn: true,
-      user: INITIAL_SR_LIST[1], // Default to Tanvir Ahmed (Bogura - SR02)
-      role: 'sr'
+    // Auth session: restored from localStorage on page reload
+    const savedAuth = localStorage.getItem(SESSION_AUTH_KEY);
+    this.authSession = savedAuth ? JSON.parse(savedAuth) : {
+      isLoggedIn: false,
+      user: null,
+      role: null
     };
 
-    this.activeTab = 'home'; // Default SR view is Home page (with Hero Banner & Customer list)
+    // Initialize active tab from URL hash or user role
+    const hashTab = (typeof window !== 'undefined' && window.location.hash) ? window.location.hash.replace('#', '') : '';
+    if (hashTab) {
+      this.activeTab = hashTab;
+    } else {
+      this.activeTab = this.authSession.role === 'admin' ? 'dashboard' : 'home';
+    }
     this.customerSearchQuery = '';
     this.catalogCategory = 'all';
     this.catalogSearch = '';
 
     this.cart = {
-      customerId: 'BH0002',
+      customerId: '',
       items: {},
       discount: 0,
       notes: ''
@@ -466,25 +514,35 @@ export class Store {
     return (I18N[this.lang] && I18N[this.lang][key]) || (I18N.en && I18N.en[key]) || key;
   }
 
+  formatCurrency(val: number): string {
+    const num = (val || 0).toLocaleString();
+    return this.lang === 'bn' ? `৳${num}` : `৳${num}`;
+  }
+
+  formatQty(qty: number): string {
+    return this.lang === 'bn' ? `${qty} টি` : `${qty} units`;
+  }
+
   loadDatabase() {
+    // Purge legacy mock storage keys
+    localStorage.removeItem('bioherbs_agrovet_db_v3');
+    localStorage.removeItem('bioherbs_agrovet_db_v4');
+
     const raw = localStorage.getItem(DB_STORAGE_KEY);
     if (!raw) {
       this.seedInitialData();
     } else {
       try {
-        this.db = JSON.parse(raw);
-        // Ensure admins array exists
-        if (!this.db.admins || this.db.admins.length === 0) {
-          this.db.admins = [{ ...ADMIN_USER }];
-        }
-        // Ensure assignedSrId exists for legacy data
-        if (this.db && this.db.customers) {
-          this.db.customers.forEach(c => {
-            if (!c.assignedSrId) {
-              c.assignedSrId = c.createdBy || 'SR01';
-            }
-          });
-        }
+        const parsed = JSON.parse(raw);
+        // Ensure arrays and load all saved data
+        this.db = {
+          products: Array.isArray(parsed.products) ? parsed.products : [],
+          customers: Array.isArray(parsed.customers) ? parsed.customers : [],
+          orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+          srs: Array.isArray(parsed.srs) ? parsed.srs : [],
+          admins: Array.isArray(parsed.admins) ? parsed.admins : [],
+          lastUpdated: parsed.lastUpdated || new Date().toISOString()
+        };
       } catch (e) {
         this.seedInitialData();
       }
@@ -494,11 +552,11 @@ export class Store {
 
   seedInitialData() {
     this.db = {
-      products: [...INITIAL_PRODUCTS],
-      customers: [...INITIAL_CUSTOMERS],
-      orders: [...INITIAL_ORDERS],
-      srs: [...INITIAL_SR_LIST],
-      admins: [{ ...ADMIN_USER }],
+      products: [],
+      customers: [],
+      orders: [],
+      srs: [],
+      admins: [],
       lastUpdated: new Date().toISOString()
     };
     this.saveDatabase();
@@ -518,6 +576,14 @@ export class Store {
     }
   }
 
+  clearLocalCache() {
+    localStorage.removeItem(DB_STORAGE_KEY);
+    this.seedInitialData();
+    if (this.isFirebaseReady && this.firebaseDb) {
+      this.tryInitFirebase();
+    }
+  }
+
   tryInitFirebase() {
     const configRaw = localStorage.getItem(FIREBASE_CONFIG_KEY);
     if (!configRaw) return;
@@ -533,14 +599,42 @@ export class Store {
         this.firebaseDb = fb.database();
         this.isFirebaseReady = true;
 
+        const updateFromSnapshot = (val: any) => {
+          if (!val) return;
+          const target = val.bioherbs_agrovet ? val.bioherbs_agrovet : val;
+          const products = Array.isArray(target.products) ? target.products : (target.products ? Object.values(target.products) : []);
+          const customers = Array.isArray(target.customers) ? target.customers : (target.customers ? Object.values(target.customers) : []);
+          const orders = Array.isArray(target.orders) ? target.orders : (target.orders ? Object.values(target.orders) : []);
+          const srs = Array.isArray(target.srs) ? target.srs : (target.srs ? Object.values(target.srs) : []);
+          const admins = Array.isArray(target.admins) ? target.admins : (target.admins ? Object.values(target.admins) : []);
+
+          this.db = {
+            products: products as Product[],
+            customers: customers as Customer[],
+            orders: orders as Order[],
+            srs: srs as SRUser[],
+            admins: admins as AdminUser[],
+            lastUpdated: target.lastUpdated || new Date().toISOString()
+          };
+          localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(this.db));
+          if ((window as any).App && (window as any).App.render) {
+            (window as any).App.render();
+          }
+        };
+
+        // Listen on /bioherbs_agrovet
         this.firebaseDb.ref('bioherbs_agrovet').on('value', (snapshot: any) => {
           const val = snapshot.val();
-          if (val && val.products) {
-            this.db = val;
-            localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(this.db));
-            if ((window as any).App && (window as any).App.render) {
-              (window as any).App.render();
-            }
+          if (val) {
+            updateFromSnapshot(val);
+          } else {
+            // Also check root if user uploaded at root
+            this.firebaseDb.ref().once('value', (rootSnap: any) => {
+              const rootVal = rootSnap.val();
+              if (rootVal && (rootVal.products || rootVal.srs || rootVal.admins || rootVal.customers)) {
+                updateFromSnapshot(rootVal);
+              }
+            });
           }
         });
       }

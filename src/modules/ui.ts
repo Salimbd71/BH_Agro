@@ -144,16 +144,21 @@ export function renderTopNav(isAdmin: boolean): string {
         <!-- Controls & Specific SR Header Icons -->
         <div class="flex items-center gap-2 sm:gap-3">
           
-          <!-- TOP HEADER PRODUCT LIST ICON (Explicitly requested for SR site!) -->
+          <!-- TOP HEADER PRODUCT LIST ICON & REPORTS (For SR quick access) -->
           ${isSR ? `
-            <button onclick="window.App.navigate('products')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-950/60 text-brand-800 dark:text-brand-300 font-bold text-xs hover:bg-brand-100 transition shadow-sm active:scale-95" title="View Veterinary Medicines Catalog">
+            <button onclick="window.App.navigate('products')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-950/60 text-brand-800 dark:text-brand-300 font-bold text-xs hover:bg-brand-100 transition shadow-sm active:scale-95" title="${store.lang === 'bn' ? 'ওষুধ ক্যাটালগ' : 'Medicines Catalog'}">
               <i data-lucide="package" class="w-4 h-4 text-brand-600"></i>
-              <span class="hidden sm:inline">Medicines</span>
+              <span class="hidden sm:inline">${store.lang === 'bn' ? 'ওষুধের তালিকা' : 'Medicines'}</span>
             </button>
 
-            <button onclick="window.App.navigate('my_orders')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs hover:bg-slate-100 transition shadow-sm" title="My Bookings">
+            <button onclick="window.App.navigate('my_orders')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs hover:bg-slate-100 transition shadow-sm" title="${store.lang === 'bn' ? 'আমার বুকিং' : 'My Bookings'}">
               <i data-lucide="calendar-check" class="w-4 h-4 text-tealbrand-600"></i>
-              <span class="hidden sm:inline">Orders</span>
+              <span class="hidden sm:inline">${store.lang === 'bn' ? 'বুকিং' : 'Orders'}</span>
+            </button>
+
+            <button onclick="window.App.navigate('reports')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 font-bold text-xs hover:bg-purple-100 transition shadow-sm" title="${store.t('reportsAnalytics')}">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-600"></i>
+              <span class="hidden sm:inline">${store.lang === 'bn' ? 'সেলস রিপোর্ট' : 'Reports'}</span>
             </button>
           ` : ''}
 
@@ -198,8 +203,9 @@ export function renderTopNav(isAdmin: boolean): string {
  * Shows Target, Achievement %, Today's order booking count and value
  */
 export function renderSRHeroBanner(): string {
-  const srId = store.authSession.user?.id || 'SR01';
-  const myOrders = store.db.orders.filter(o => o.srId === srId);
+  const isBN = store.lang === 'bn';
+  const srId = store.authSession.user?.id || '';
+  const myOrders = (store.db.orders || []).filter(o => o.srId === srId);
   const todayStr = new Date().toISOString().split('T')[0];
   const todayOrders = myOrders.filter(o => o.date === todayStr);
   
@@ -208,7 +214,7 @@ export function renderSRHeroBanner(): string {
   const totalSalesAchieved = myOrders.reduce((acc, o) => acc + o.grandTotal, 0);
   
   const target = (store.authSession.user as any)?.target || 350000;
-  const achievementPct = Math.min(100, Math.round((totalSalesAchieved / target) * 100));
+  const achievementPct = target > 0 ? Math.min(100, Math.round((totalSalesAchieved / target) * 100)) : 0;
 
   return `
     <div class="p-6 rounded-3xl bg-gradient-to-r from-brand-800 via-brand-700 to-tealbrand-700 text-white shadow-xl relative overflow-hidden mb-6">
@@ -218,22 +224,26 @@ export function renderSRHeroBanner(): string {
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 backdrop-blur border border-white/20">
-              ${store.authSession.user?.territory || 'Territory Field'}
+              ${store.authSession.user?.territory || (isBN ? 'ফিল্ড টেরিটরি' : 'Territory Field')}
             </span>
             <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">
-              ${store.lang === 'bn' ? 'স্বাগতম' : 'Welcome'}, ${store.authSession.user?.name}
+              ${isBN ? 'স্বাগতম' : 'Welcome'}, ${store.authSession.user?.name || (isBN ? 'এসআর অফিসার' : 'SR Officer')}
             </h2>
           </div>
 
           <!-- Quick Action Buttons -->
           <div class="flex items-center gap-2">
-            <button onclick="window.App.navigate('order_booking')" class="px-4 py-2.5 bg-white text-brand-900 rounded-2xl font-extrabold text-xs shadow-md hover:bg-brand-50 transition flex items-center gap-1.5 active:scale-95">
+            <button onclick="window.App.navigate('order_booking')" class="px-3.5 sm:px-4 py-2.5 bg-white text-brand-900 rounded-2xl font-extrabold text-xs shadow-md hover:bg-brand-50 transition flex items-center gap-1.5 active:scale-95">
               <i data-lucide="plus-circle" class="w-4 h-4 text-brand-600"></i>
               <span>${store.t('orderBooking')}</span>
             </button>
-            <button onclick="window.App.navigate('products')" class="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold text-xs backdrop-blur border border-white/30 transition flex items-center gap-1.5">
+            <button onclick="window.App.navigate('reports')" class="px-3.5 sm:px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold text-xs backdrop-blur border border-white/30 transition flex items-center gap-1.5 active:scale-95">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-300"></i>
+              <span>${store.lang === 'bn' ? 'সেলস রিপোর্ট' : 'Reports'}</span>
+            </button>
+            <button onclick="window.App.navigate('products')" class="px-3.5 sm:px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold text-xs backdrop-blur border border-white/20 transition hidden sm:flex items-center gap-1.5">
               <i data-lucide="package" class="w-4 h-4"></i>
-              <span>Medicines</span>
+              <span>${store.lang === 'bn' ? 'ওষুধ তালিকা' : 'Medicines'}</span>
             </button>
           </div>
         </div>
@@ -245,28 +255,36 @@ export function renderSRHeroBanner(): string {
           <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
             <div class="text-[11px] font-bold text-brand-200 uppercase">${store.t('target')}</div>
             <div class="text-xl sm:text-2xl font-black mt-0.5">৳${target.toLocaleString()}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">Monthly Territory Goal</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">
+              ${isBN ? 'মাসিক নির্ধারিত লক্ষ্য' : 'Monthly Territory Goal'}
+            </div>
           </div>
 
           <!-- Total Achievement -->
           <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
             <div class="text-[11px] font-bold text-amber-300 uppercase">${store.t('achievement')} (${achievementPct}%)</div>
             <div class="text-xl sm:text-2xl font-black mt-0.5 text-amber-200">৳${totalSalesAchieved.toLocaleString()}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">${myOrders.length} confirmed orders</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">
+              ${isBN ? `${myOrders.length} টি নিশ্চিত অর্ডার` : `${myOrders.length} confirmed orders`}
+            </div>
           </div>
 
           <!-- Today's Booking Number -->
           <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
             <div class="text-[11px] font-bold text-emerald-300 uppercase">${store.t('todayBookingCount')}</div>
             <div class="text-xl sm:text-2xl font-black mt-0.5">${todayBookingCount}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">Bookings today (${todayStr})</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">
+              ${isBN ? `আজকের বুকিং (${todayStr})` : `Bookings today (${todayStr})`}
+            </div>
           </div>
 
           <!-- Today's Booking Value -->
           <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
             <div class="text-[11px] font-bold text-teal-200 uppercase">${store.t('todayBookingValue')}</div>
             <div class="text-xl sm:text-2xl font-black mt-0.5 text-teal-100">৳${todayBookingValue.toLocaleString()}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">Gross daily volume</div>
+            <div class="text-[10px] text-brand-100 mt-0.5">
+              ${isBN ? 'দৈনিক মোট বুকিং মূল্য' : 'Gross daily volume'}
+            </div>
           </div>
 
         </div>
@@ -274,12 +292,11 @@ export function renderSRHeroBanner(): string {
         <!-- Target Progress Bar -->
         <div class="pt-2">
           <div class="flex items-center justify-between text-xs font-semibold mb-1 text-brand-100">
-            <span>Monthly Achievement Progress</span>
+            <span>${isBN ? 'মাসিক অর্জনের অগ্রগতি' : 'Monthly Achievement Progress'}</span>
             <span class="font-bold text-amber-300">${achievementPct}%</span>
           </div>
           <div class="w-full h-2.5 rounded-full bg-black/30 overflow-hidden">
             <div class="h-full bg-gradient-to-r from-amber-300 to-emerald-300 rounded-full transition-all duration-500" style="width: ${achievementPct}%"></div>
-          </div>
         </div>
 
       </div>

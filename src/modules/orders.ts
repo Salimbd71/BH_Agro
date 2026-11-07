@@ -10,6 +10,7 @@ export class OrderModule {
   renderOrderBooking(onOrderPlaced: (id: string) => void): string {
     const isAdmin = store.authSession.role === 'admin';
     const currentSrId = store.authSession.user?.id;
+    const isBn = store.lang === 'bn';
 
     // RULE: For SR, only allow booking for customers assigned to this SR!
     const approvedCustomers = store.db.customers.filter(c => {
@@ -65,7 +66,7 @@ export class OrderModule {
               <span>${store.t('orderBooking')}</span>
             </h2>
             <p class="text-xs text-slate-500">
-              ${!isAdmin ? `Booking allowed only for customers assigned to you (${store.authSession.user?.name})` : 'Orders are instantly confirmed upon submission (No Admin approval needed).'}
+              ${!isAdmin ? (isBn ? `শুধুমাত্র আপনার জন্য নির্ধারিত গ্রাহকের অর্ডার বুকিং প্রযোজ্য (${store.authSession.user?.name})` : `Booking allowed only for customers assigned to you (${store.authSession.user?.name})`) : (isBn ? 'অর্ডার সাবমিট করলে সরাসরি নিশ্চিত হবে (অ্যাডমিন অনুমোদনের প্রয়োজন নেই)।' : 'Orders are instantly confirmed upon submission (No Admin approval needed).')}
             </p>
           </div>
 
@@ -73,7 +74,7 @@ export class OrderModule {
           <div class="w-full sm:w-auto min-w-[320px]">
             ${approvedCustomers.length === 0 ? `
               <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-bold border border-amber-200">
-                No approved customers assigned to your SR account yet.
+                ${isBn ? 'আপনার অধীনে এখনও কোনো অনুমোদিত গ্রাহক নেই।' : 'No approved customers assigned to your SR account yet.'}
               </div>
             ` : `
               <select id="bookingCustomerSelect" onchange="window.OrderActions.setCustomer(this.value)" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-brand-500">
@@ -96,8 +97,8 @@ export class OrderModule {
               <span class="text-slate-500">• ${selectedCust.address}</span>
             </div>
             <div class="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-semibold">
-              <span>Phone: <b class="font-mono">${selectedCust.phone}</b></span>
-              <span>Credit Limit: <b>৳${(selectedCust.creditLimit || 0).toLocaleString()}</b></span>
+              <span>${isBn ? 'মোবাইল:' : 'Phone:'} <b class="font-mono">${selectedCust.phone}</b></span>
+              <span>${store.t('creditLimit')}: <b>৳${(selectedCust.creditLimit || 0).toLocaleString()}</b></span>
             </div>
           </div>
         ` : ''}
@@ -130,6 +131,7 @@ export class OrderModule {
                 const cartItem = store.cart.items[p.id];
                 const qtyInCart = cartItem ? cartItem.qty : 0;
                 const isOutOfStock = p.stock <= 0;
+                const isLow = p.stock > 0 && p.stock < 10;
                 return `
                   <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border ${qtyInCart > 0 ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200 dark:border-slate-800'} shadow-sm flex flex-col justify-between transition-all">
                     <div>
@@ -139,17 +141,17 @@ export class OrderModule {
                           (p.category === 'vaccines' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
                           (p.category === 'supplements' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'))
                         }">
-                          ${p.category}
+                          ${store.t(p.category) || p.category}
                         </span>
                         <span class="text-[10px] font-bold ${
                           p.stock <= 0 ? 'text-rose-600' :
                           (p.stock < 10 ? 'text-amber-600 font-extrabold animate-pulse' : 'text-slate-500')
                         }">
-                          ${p.stock <= 0 ? 'Out of Stock' : (p.stock < 10 ? `Low: ${p.stock}` : `Stock: ${p.stock}`)}
+                          ${isOutOfStock ? (isBn ? 'স্টক শেষ' : 'Out of Stock') : (isLow ? (isBn ? `স্বল্প: ${p.stock}` : `Low: ${p.stock}`) : (isBn ? `মজুদ: ${p.stock}` : `Stock: ${p.stock}`))}
                         </span>
                       </div>
 
-                      <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">${store.lang === 'bn' ? p.bnName : p.name}</h4>
+                      <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">${isBn ? (p.bnName || p.name) : p.name}</h4>
                       <p class="text-xs text-slate-500 mt-0.5">${p.packSize} • <span class="font-mono text-[11px]">${p.sku}</span></p>
 
                       ${p.tradeOffer ? `
@@ -162,17 +164,17 @@ export class OrderModule {
                       <div class="mt-3 flex items-baseline gap-2">
                         <span class="text-base font-black text-brand-700 dark:text-brand-400">৳${p.tradePrice}</span>
                         <span class="text-xs text-slate-400 line-through">MRP ৳${p.mrp}</span>
-                        <span class="text-[10px] text-slate-400">/ TP</span>
+                        <span class="text-[10px] text-slate-400">/ ${isBn ? 'টিপি' : 'TP'}</span>
                       </div>
                     </div>
 
                     <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                       ${isOutOfStock ? `
-                        <div class="text-center py-1.5 text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/40 rounded-xl">Out of Stock</div>
+                        <div class="text-center py-1.5 text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/40 rounded-xl">${isBn ? 'স্টক শেষ' : 'Out of Stock'}</div>
                       ` : (qtyInCart === 0 ? `
                         <button onclick="window.OrderActions.updateQty('${p.id}', 1)" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
-                          <i data-lucide="plus" class="w-4 h-4"></i>
-                          <span>Add to Order</span>
+                          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                          <span>${store.t('bookProduct')}</span>
                         </button>
                       ` : `
                         <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
@@ -201,7 +203,7 @@ export class OrderModule {
                   <h3 class="font-extrabold text-sm sm:text-base">${store.t('cartTitle')}</h3>
                 </div>
                 ${cartItemKeys.length > 0 ? `
-                  <button onclick="window.OrderActions.clearCart()" class="text-xs text-rose-500 hover:underline">Clear</button>
+                  <button onclick="window.OrderActions.clearCart()" class="text-xs text-rose-500 hover:underline">${isBn ? 'খালি করুন' : 'Clear'}</button>
                 ` : ''}
               </div>
 
@@ -217,12 +219,12 @@ export class OrderModule {
                     return `
                       <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
                         <div class="flex justify-between font-bold text-slate-800 dark:text-slate-100">
-                          <span class="truncate max-w-[170px]">${it.product.name}</span>
+                          <span class="truncate max-w-[170px]">${isBn ? (it.product.bnName || it.product.name) : it.product.name}</span>
                           <span>৳${it.total.toLocaleString()}</span>
                         </div>
                         <div class="flex items-center justify-between text-[11px] text-slate-500 mt-1">
                           <span>${it.qty} × ৳${it.product.tradePrice}</span>
-                          ${it.freeQty > 0 ? `<span class="text-tealbrand-600 font-bold">+${it.freeQty} Free</span>` : ''}
+                          ${it.freeQty > 0 ? `<span class="text-tealbrand-600 font-bold">${isBn ? `+${it.freeQty} টি ফ্রি` : `+${it.freeQty} Free`}</span>` : ''}
                         </div>
                       </div>
                     `;
@@ -231,12 +233,12 @@ export class OrderModule {
 
                 <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                   <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">${store.t('discount')} (৳)</label>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">${store.t('discount')}</label>
                     <input type="number" min="0" value="${store.cart.discount}" oninput="window.OrderActions.setDiscount(this.value)" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="0" />
                   </div>
                   <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">Remarks / Note</label>
-                    <input type="text" value="${store.cart.notes || ''}" oninput="window.OrderActions.setNotes(this.value)" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="e.g. Urgent morning delivery" />
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">${isBn ? 'মন্তব্য বা ডেলিভারি নোট' : 'Remarks / Delivery Note'}</label>
+                    <input type="text" value="${store.cart.notes || ''}" oninput="window.OrderActions.setNotes(this.value)" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="${isBn ? 'যেমন: সকালের মধ্যে ডেলিভারি দিন' : 'e.g. Urgent morning delivery'}" />
                   </div>
                 </div>
 
@@ -248,7 +250,7 @@ export class OrderModule {
                   ${totalFreeItems > 0 ? `
                     <div class="flex justify-between text-tealbrand-600 font-bold">
                       <span>${store.t('freeQty')}</span>
-                      <span>${totalFreeItems} units free</span>
+                      <span>${totalFreeItems} ${isBn ? 'টি ফ্রি' : 'units free'}</span>
                     </div>
                   ` : ''}
                   ${discount > 0 ? `
@@ -259,7 +261,7 @@ export class OrderModule {
                   ` : ''}
                   <div class="flex justify-between text-slate-500">
                     <span>${store.t('vat')}</span>
-                    <span>৳0 (Exempt)</span>
+                    <span>${isBn ? '৳০ (ভ্যাটমুক্ত)' : '৳0 (Exempt)'}</span>
                   </div>
                   <div class="flex justify-between text-sm sm:text-base font-black text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
                     <span>${store.t('grandTotal')}</span>
@@ -281,13 +283,14 @@ export class OrderModule {
   }
 
   submitOrder(onOrderPlaced: (id: string) => void, showToast: (msg: string, type?: string) => void) {
+    const isBn = store.lang === 'bn';
     if (!store.cart.customerId) {
-      showToast('Please select a customer first!', 'error');
+      showToast(isBn ? 'অনুগ্রহ করে প্রথমে একজন গ্রাহক নির্বাচন করুন!' : 'Please select a customer first!', 'error');
       return;
     }
     const itemKeys = Object.keys(store.cart.items);
     if (itemKeys.length === 0) {
-      showToast('Add at least one medicine to the order slip!', 'error');
+      showToast(isBn ? 'কমপক্ষে একটি ওষুধ অর্ডার স্লিপে যোগ করুন!' : 'Add at least one medicine to the order slip!', 'error');
       return;
     }
 
@@ -297,7 +300,7 @@ export class OrderModule {
     const isAdmin = store.authSession.role === 'admin';
     const currentSrId = store.authSession.user?.id;
     if (!isAdmin && (customer.assignedSrId || customer.createdBy) !== currentSrId) {
-      showToast('Security Error: You are only permitted to book orders for customers assigned to you!', 'error');
+      showToast(isBn ? 'নিরাপত্তা ত্রুটি: শুধুমাত্র আপনার নির্ধারিত গ্রাহকের জন্য অর্ডার বুকিং প্রযোজ্য!' : 'Security Error: You are only permitted to book orders for customers assigned to you!', 'error');
       return;
     }
 
@@ -355,7 +358,7 @@ export class OrderModule {
     store.cart.discount = 0;
     store.cart.notes = '';
 
-    showToast(`Order ${newOrderId} confirmed successfully!`);
+    showToast(isBn ? `অর্ডার ${newOrderId} সফলভাবে কনফার্ম করা হয়েছে!` : `Order ${newOrderId} confirmed successfully!`);
     onOrderPlaced(newOrderId);
   }
 }

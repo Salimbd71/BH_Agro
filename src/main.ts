@@ -3,7 +3,7 @@
  * Coordinates Modular Architecture, Router, and UI Rendering
  */
 
-import { store, ADMIN_USER } from './modules/store.ts';
+import { store } from './modules/store.ts';
 import { router } from './modules/router.ts';
 import { authModule } from './modules/auth.ts';
 import { customerModule } from './modules/customers.ts';
@@ -70,6 +70,8 @@ export const App = {
       authModule.attachSearchListener();
     } else if (store.activeTab === 'stock_manage' || store.activeTab === 'order_booking') {
       stockModule.attachSearchListener();
+    } else if (store.activeTab === 'reports') {
+      reportModule.attachSearchListener();
     }
   },
 
@@ -78,8 +80,8 @@ export const App = {
 
     const navItems = isAdmin ? [
       { id: 'dashboard', label: store.t('dashboard'), icon: 'layout-dashboard' },
-      { id: 'stock_manage', label: 'Stock Management (স্টক ম্যানেজ)', icon: 'boxes' },
-      { id: 'orders_management', label: 'All Orders & Invoicing', icon: 'clipboard-list' },
+      { id: 'stock_manage', label: store.t('stockManage'), icon: 'boxes' },
+      { id: 'orders_management', label: store.t('ordersManagement'), icon: 'clipboard-list' },
       { id: 'approvals', label: store.t('pendingApprovals'), icon: 'user-check', badge: pendingCount },
       { id: 'customers', label: store.t('customerList'), icon: 'users' },
       { id: 'sr_management', label: store.t('srManagement'), icon: 'user-cog' },
@@ -87,10 +89,11 @@ export const App = {
       { id: 'pricing_manager', label: store.t('pricingManager'), icon: 'tags' },
       { id: 'reports', label: store.t('reportsAnalytics'), icon: 'bar-chart-3' },
     ] : [
-      { id: 'home', label: 'Home (Customers)', icon: 'home' },
+      { id: 'home', label: store.t('homeCustomers'), icon: 'home' },
       { id: 'order_booking', label: store.t('orderBooking'), icon: 'shopping-cart' },
-      { id: 'products', label: 'Medicines List', icon: 'package' },
+      { id: 'products', label: store.t('medicinesList'), icon: 'package' },
       { id: 'my_orders', label: store.t('todayBooking'), icon: 'calendar-check' },
+      { id: 'reports', label: store.t('reportsAnalytics'), icon: 'bar-chart-3' },
     ];
 
     return `
@@ -224,6 +227,8 @@ export const App = {
           return productModule.renderProductSection();
         case 'my_orders':
           return this.renderSROrders();
+        case 'reports':
+          return reportModule.renderReportsSection();
         default:
           return `
             ${renderSRHeroBanner()}
@@ -266,6 +271,7 @@ export const App = {
   renderSROrders(): string {
     const srId = store.authSession.user?.id;
     const myOrders = store.db.orders.filter(o => o.srId === srId);
+    const isBn = store.lang === 'bn';
 
     return `
       <div class="space-y-6">
@@ -273,12 +279,12 @@ export const App = {
           <div>
             <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
               <i data-lucide="calendar-check" class="w-6 h-6 text-brand-600"></i>
-              <span>My Field Bookings & Invoices</span>
+              <span>${isBn ? 'আমার ফিল্ড বুকিং ও ইনভয়েস' : 'My Field Bookings & Invoices'}</span>
             </h2>
-            <p class="text-xs text-slate-500">Orders placed by you on the field. Instantly download or print invoice.</p>
+            <p class="text-xs text-slate-500">${isBn ? 'মাঠ পর্যায়ে আপনার কৃত অর্ডার ও তাৎক্ষণিক ইনভয়েস তালিকা।' : 'Orders placed by you on the field. Instantly download or print invoice.'}</p>
           </div>
           <button onclick="window.App.navigate('order_booking')" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold shadow hover:bg-brand-500 transition">
-            + New Booking
+            ${isBn ? '+ নতুন বুকিং' : '+ New Booking'}
           </button>
         </div>
 
@@ -286,7 +292,7 @@ export const App = {
           ${myOrders.length === 0 ? `
             <div class="text-center py-12 text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
               <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
-              <p class="text-xs">No orders placed yet today.</p>
+              <p class="text-xs font-bold">${isBn ? 'আজকে এখনও কোনো অর্ডার সম্পন্ন হয়নি।' : 'No orders placed yet today.'}</p>
             </div>
           ` : myOrders.map(o => `
             <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
@@ -295,14 +301,14 @@ export const App = {
                   <span class="font-mono font-bold text-xs text-brand-700 dark:text-brand-400">${o.id}</span>
                   <span class="text-xs text-slate-400">• ${o.date}</span>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    CONFIRMED
+                    ${isBn ? 'নিশ্চিত' : 'CONFIRMED'}
                   </span>
                 </div>
                 <h4 class="font-extrabold text-base text-slate-900 dark:text-white">
                   <span class="font-mono text-brand-700">${o.customerId}</span> ${o.customerShopName || o.customerName}
                 </h4>
                 <p class="text-xs text-slate-500 mt-1">${o.customerAddress || o.territory}</p>
-                <p class="text-xs text-slate-500 mt-1">${o.items.length} medicines • Total: <span class="font-black text-brand-700 dark:text-brand-400">৳${o.grandTotal.toLocaleString()}</span></p>
+                <p class="text-xs text-slate-500 mt-1">${o.items.length} ${isBn ? 'টি ওষুধ' : 'medicines'} • ${isBn ? 'মোট:' : 'Total:'} <span class="font-black text-brand-700 dark:text-brand-400">৳${o.grandTotal.toLocaleString()}</span></p>
               </div>
 
               <div class="flex items-center gap-2">
@@ -320,6 +326,7 @@ export const App = {
 
   renderAdminOrders(): string {
     const orders = store.db.orders;
+    const isBn = store.lang === 'bn';
 
     return `
       <div class="space-y-6">
@@ -327,9 +334,9 @@ export const App = {
           <div>
             <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
               <i data-lucide="clipboard-list" class="w-6 h-6 text-brand-600"></i>
-              <span>All Field Orders & Invoices</span>
+              <span>${isBn ? 'সকল ফিল্ড অর্ডার ও ইনভয়েস' : 'All Field Orders & Invoices'}</span>
             </h2>
-            <p class="text-xs text-slate-500">Orders are confirmed automatically. Admin can print invoice or delete orders.</p>
+            <p class="text-xs text-slate-500">${isBn ? 'অর্ডারসমূহ স্বয়ংক্রিয়ভাবে নিশ্চিত হয়। অ্যাডমিন ইনভয়েস প্রিন্ট বা অর্ডার ডিলিট করতে পারেন।' : 'Orders are confirmed automatically. Admin can print invoice or delete orders.'}</p>
           </div>
         </div>
 
@@ -337,14 +344,14 @@ export const App = {
           <table class="w-full text-left text-xs">
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
-                <th class="pb-3">Order ID</th>
-                <th class="pb-3">Date</th>
-                <th class="pb-3">SR Name</th>
-                <th class="pb-3">Customer (ID & Name)</th>
-                <th class="pb-3">Address</th>
-                <th class="pb-3">Total (৳)</th>
-                <th class="pb-3">Status</th>
-                <th class="pb-3 text-right">Actions</th>
+                <th class="pb-3">${isBn ? 'অর্ডার আইডি' : 'Order ID'}</th>
+                <th class="pb-3">${isBn ? 'তারিখ' : 'Date'}</th>
+                <th class="pb-3">${isBn ? 'এসআর-এর নাম' : 'SR Name'}</th>
+                <th class="pb-3">${isBn ? 'গ্রাহক (আইডি ও নাম)' : 'Customer (ID & Name)'}</th>
+                <th class="pb-3">${isBn ? 'ঠিকানা' : 'Address'}</th>
+                <th class="pb-3">${isBn ? 'মোট টাকা' : 'Total (BDT)'}</th>
+                <th class="pb-3">${isBn ? 'স্ট্যাটাস' : 'Status'}</th>
+                <th class="pb-3 text-right">${store.t('action')}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -360,16 +367,16 @@ export const App = {
                   <td class="py-3 font-black text-slate-900 dark:text-white">৳${o.grandTotal.toLocaleString()}</td>
                   <td class="py-3">
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      Confirmed
+                      ${isBn ? 'নিশ্চিত' : 'Confirmed'}
                     </span>
                   </td>
                   <td class="py-3 text-right">
                     <div class="flex items-center justify-end gap-1.5">
-                      <button onclick="window.App.printInvoice('${o.id}')" class="px-2.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-[11px] shadow-sm flex items-center gap-1" title="Print Invoice">
+                      <button onclick="window.App.printInvoice('${o.id}')" class="px-2.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-[11px] shadow-sm flex items-center gap-1" title="${store.t('printInvoice')}">
                         <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                        <span>Print</span>
+                        <span>${isBn ? 'প্রিন্ট' : 'Print'}</span>
                       </button>
-                      <button onclick="window.App.deleteOrder('${o.id}')" class="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900 text-rose-600 hover:bg-rose-50 text-[11px]" title="Delete Order">
+                      <button onclick="window.App.deleteOrder('${o.id}')" class="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900 text-rose-600 hover:bg-rose-50 text-[11px]" title="${isBn ? 'অর্ডার মুছুন' : 'Delete Order'}">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                       </button>
                     </div>
@@ -389,6 +396,7 @@ export const App = {
     const pendingApprovals = store.db.customers.filter(c => c.status === 'pending').length;
     const totalInventoryValue = store.db.products.reduce((sum, p) => sum + (p.stock * p.tradePrice), 0);
     const lowStockProducts = store.db.products.filter(p => p.stock > 0 && p.stock < 10);
+    const isBn = store.lang === 'bn';
 
     return `
       <div class="space-y-6">
@@ -396,19 +404,19 @@ export const App = {
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
               <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-brand-500/20 text-brand-300 border border-brand-500/30">
-                Central Admin • Control Centre
+                ${isBn ? 'সেন্ট্রাল অ্যাডমিন কন্ট্রোল সেন্টার' : 'Central Admin • Control Centre'}
               </span>
-              <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">BH Agro Ltd. HQ</h2>
-              <p class="text-sm text-slate-300 mt-1">Live national veterinary sales analytics and inventory control.</p>
+              <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">${isBn ? 'বিএইচ এগ্রো লি. হেডকোয়ার্টার' : 'BH Agro Ltd. HQ'}</h2>
+              <p class="text-sm text-slate-300 mt-1">${isBn ? 'জাতীয় ভেটেরিনারি বিক্রয় বিশ্লেষণ ও কেন্দ্রীয় ইনভেন্টরি কন্ট্রোল।' : 'Live national veterinary sales analytics and inventory control.'}</p>
             </div>
             <div class="flex items-center gap-2">
               <button onclick="window.App.navigate('orders_management')" class="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-bold text-xs hover:bg-brand-500 transition shadow flex items-center gap-2">
                 <i data-lucide="clipboard-list" class="w-4 h-4"></i>
-                <span>Orders & Invoicing</span>
+                <span>${store.t('ordersManagement')}</span>
               </button>
               <button onclick="window.App.navigate('reports')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition flex items-center gap-2">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                <span>Sales Reports</span>
+                <span>${store.t('reportsAnalytics')}</span>
               </button>
             </div>
           </div>
@@ -417,44 +425,44 @@ export const App = {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between text-brand-600 mb-2">
-              <span class="text-xs font-bold uppercase text-slate-400">Total Sales</span>
+              <span class="text-xs font-bold uppercase text-slate-400">${isBn ? 'মোট বিক্রয়' : 'Total Sales'}</span>
               <div class="p-2 rounded-xl bg-brand-50 dark:bg-brand-950/60"><i data-lucide="banknote" class="w-4 h-4"></i></div>
             </div>
             <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">৳${totalSales.toLocaleString()}</div>
-            <div class="text-xs text-emerald-600 font-semibold mt-1">${totalOrders} orders processed</div>
+            <div class="text-xs text-emerald-600 font-semibold mt-1">${totalOrders} ${isBn ? 'টি সম্পন্ন অর্ডার' : 'orders processed'}</div>
           </div>
 
           <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between text-amber-600 mb-2">
-              <span class="text-xs font-bold uppercase text-slate-400">Pending Approvals</span>
+              <span class="text-xs font-bold uppercase text-slate-400">${isBn ? 'অপেক্ষমাণ আবেদন' : 'Pending Approvals'}</span>
               <div class="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
             </div>
             <div class="text-xl sm:text-2xl font-black ${pendingApprovals > 0 ? 'text-amber-600' : ''}">${pendingApprovals}</div>
             <button onclick="window.App.navigate('approvals')" class="text-xs text-brand-600 font-bold hover:underline mt-1 block">
-              Review requests →
+              ${isBn ? 'আবেদন দেখুন →' : 'Review requests →'}
             </button>
           </div>
 
           <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between text-purple-600 mb-2">
-              <span class="text-xs font-bold uppercase text-slate-400">Inventory Value (TP)</span>
+              <span class="text-xs font-bold uppercase text-slate-400">${isBn ? 'স্টক মূল্য (টিপি)' : 'Inventory Value (TP)'}</span>
               <div class="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60"><i data-lucide="layers" class="w-4 h-4"></i></div>
             </div>
             <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">৳${totalInventoryValue.toLocaleString()}</div>
-            <div class="text-xs text-slate-500 mt-1 font-medium">${store.db.products.length} medicines in stock</div>
+            <div class="text-xs text-slate-500 mt-1 font-medium">${store.db.products.length} ${isBn ? 'টি ওষুধ মজুদ আছে' : 'medicines in stock'}</div>
           </div>
 
           <!-- Clickable Low Stock Card: Opens Low Stock Modal / Filtered Products -->
-          <div onclick="window.ProductActions.openLowStockModal()" class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 shadow-sm cursor-pointer hover:border-rose-500 hover:shadow-md transition group" title="Click to view Low Stock Products (< 10 units in stock)">
+          <div onclick="window.ProductActions.openLowStockModal()" class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 shadow-sm cursor-pointer hover:border-rose-500 hover:shadow-md transition group" title="${isBn ? 'স্বল্প স্টকের তালিকা দেখতে ক্লিক করুন' : 'Click to view Low Stock Products'}">
             <div class="flex items-center justify-between text-rose-600 mb-2">
               <span class="text-xs font-bold uppercase text-rose-700 dark:text-rose-400 flex items-center gap-1">
                 <span>${store.t('lowStock')}</span>
-                <span class="text-[10px] text-rose-500 group-hover:underline">(View List →)</span>
+                <span class="text-[10px] text-rose-500 group-hover:underline">${isBn ? '(তালিকা দেখুন →)' : '(View List →)'}</span>
               </span>
               <div class="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
             </div>
             <div class="text-xl sm:text-2xl font-black text-rose-600">${lowStockProducts.length}</div>
-            <div class="text-xs text-rose-500 font-semibold mt-1">স্টক আছে কিন্তু ১০ এর নিচে (&lt; 10 Units)</div>
+            <div class="text-xs text-rose-500 font-semibold mt-1">${isBn ? 'মজুদ ১০ ইউনিটের নিচে রয়েছে' : 'Stock is below 10 units threshold'}</div>
           </div>
         </div>
       </div>
@@ -702,9 +710,21 @@ export const App = {
     if (!grid) return;
     const cards = grid.querySelectorAll<HTMLElement>('.customer-card');
     let visible = 0;
+    const targetSr = (srId || 'all').trim().toLowerCase();
+    const searchInput = document.getElementById('customerSearchInput') as HTMLInputElement | null;
+    const q = (searchInput?.value || '').trim().toLowerCase();
+
     cards.forEach(card => {
-      const cardSrId = card.getAttribute('data-srid') || '';
-      if (srId === 'all' || cardSrId === srId) {
+      const cardSrId = (card.getAttribute('data-srid') || '').trim().toLowerCase();
+      const srMatches = targetSr === 'all' || cardSrId === targetSr;
+
+      const id = card.getAttribute('data-id')?.toLowerCase() || '';
+      const name = card.getAttribute('data-name')?.toLowerCase() || '';
+      const addr = card.getAttribute('data-address')?.toLowerCase() || '';
+      const phone = card.getAttribute('data-phone')?.toLowerCase() || '';
+      const searchMatches = !q || id.includes(q) || name.includes(q) || addr.includes(q) || phone.includes(q);
+
+      if (srMatches && searchMatches) {
         card.style.display = '';
         visible++;
       } else {
@@ -712,9 +732,14 @@ export const App = {
       }
     });
     if (notice) {
-      notice.innerText = srId === 'all' 
-        ? `Showing all ${cards.length} registered customers`
-        : `Showing ${visible} customer(s) assigned to SR: ${srId}`;
+      const isBn = store.lang === 'bn';
+      if (q) {
+        notice.innerText = isBn ? `"${searchInput?.value}" এর সাথে মিলেছে ${visible} জন গ্রাহক` : `Found ${visible} customer(s) matching "${searchInput?.value}"`;
+      } else if (targetSr === 'all') {
+        notice.innerText = isBn ? `মোট ${visible} জন গ্রাহক প্রদর্শিত` : `Showing all ${visible} registered customers`;
+      } else {
+        notice.innerText = isBn ? `এসআর (${srId}) এর অধীনে ${visible} জন গ্রাহক প্রদর্শিত` : `Showing ${visible} customer(s) assigned to SR: ${srId}`;
+      }
     }
   },
   downloadTemplate: () => {
@@ -1174,43 +1199,35 @@ export const App = {
     const userInput = (document.getElementById('srLoginUsername') as HTMLInputElement).value.trim();
     const passInput = (document.getElementById('srLoginPassword') as HTMLInputElement).value.trim();
 
-    const foundSR = store.db.srs.find(s => 
+    const foundSR = (store.db.srs || []).find(s => 
       (s.username === userInput || s.id.toLowerCase() === userInput.toLowerCase()) && 
       (s.password === passInput || s.pin === passInput)
     );
 
     if (foundSR) {
       store.setAuth(foundSR, 'sr');
-      showToast(`Welcome ${foundSR.name}!`);
+      showToast(store.lang === 'bn' ? `স্বাগতম ${foundSR.name}!` : `Welcome ${foundSR.name}!`);
       App.render();
     } else {
-      showToast('Invalid SR username or password!', 'error');
+      showToast(store.lang === 'bn' ? 'ভুল এসআর ইউজারনেম বা পাসওয়ার্ড!' : 'Invalid SR username or password!', 'error');
     }
   },
   submitAdmin: () => {
     const userInput = (document.getElementById('adminLoginUsername') as HTMLInputElement).value.trim();
     const passInput = (document.getElementById('adminLoginPassword') as HTMLInputElement).value.trim();
 
-    const admins = store.db.admins || [{ ...ADMIN_USER }];
+    const admins = store.db.admins || [];
     const foundAdmin = admins.find(a => 
       (a.username === userInput || a.id.toLowerCase() === userInput.toLowerCase()) && 
-      (a.password === passInput || a.pin === passInput || passInput === '9999')
+      (a.password === passInput || a.pin === passInput)
     );
-
-    // Fallback for default admin
-    if (!foundAdmin && userInput === 'admin' && (passInput === '123' || passInput === '9999')) {
-      store.setAuth(ADMIN_USER, 'admin');
-      showToast('Welcome Admin Dr. Nazmul Huda!');
-      App.render();
-      return;
-    }
 
     if (foundAdmin) {
       store.setAuth(foundAdmin, 'admin');
-      showToast(`Welcome Admin ${foundAdmin.name}!`);
+      showToast(store.lang === 'bn' ? `স্বাগতম অ্যাডমিন ${foundAdmin.name}!` : `Welcome Admin ${foundAdmin.name}!`);
       App.render();
     } else {
-      showToast('Invalid Admin credentials!', 'error');
+      showToast(store.lang === 'bn' ? 'ভুল অ্যাডমিন ইউজারনেম বা পাসওয়ার্ড!' : 'Invalid Admin credentials!', 'error');
     }
   },
   openAddAdminModal: () => {

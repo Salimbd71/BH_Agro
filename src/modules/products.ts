@@ -20,15 +20,15 @@ export class ProductModule {
               (p.category === 'vaccines' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
               (p.category === 'supplements' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'))
             }">
-              ${p.category}
+              ${store.t(p.category) || p.category}
             </span>
             <span class="text-[10px] font-bold ${isOut ? 'text-rose-600' : (isLow ? 'text-amber-600 font-extrabold animate-pulse' : 'text-slate-500')}">
-              ${isOut ? 'Out of Stock' : (isLow ? `Low Stock: ${p.stock}` : `Stock: ${p.stock}`)}
+              ${isOut ? (store.lang === 'bn' ? 'স্টক শেষ' : 'Out of Stock') : (isLow ? (store.lang === 'bn' ? `স্বল্প স্টক: ${p.stock}` : `Low Stock: ${p.stock}`) : (store.lang === 'bn' ? `মজুদ: ${p.stock}` : `Stock: ${p.stock}`))}
             </span>
           </div>
 
           <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
-            ${store.lang === 'bn' ? p.bnName : p.name}
+            ${store.lang === 'bn' ? (p.bnName || p.name) : p.name}
           </h4>
           <p class="text-xs text-slate-500 mt-0.5">${p.packSize} • <span class="font-mono text-[11px]">${p.sku}</span></p>
 
@@ -42,17 +42,17 @@ export class ProductModule {
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-base font-black text-brand-700 dark:text-brand-400">৳${p.tradePrice}</span>
             <span class="text-xs text-slate-400 line-through">MRP ৳${p.mrp}</span>
-            <span class="text-[10px] text-slate-400">/ TP</span>
+            <span class="text-[10px] text-slate-400">/ ${store.lang === 'bn' ? 'টিপি' : 'TP'}</span>
           </div>
         </div>
 
         <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
           ${isOut ? `
-            <div class="text-center py-1.5 text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/40 rounded-xl">Out of Stock</div>
+            <div class="text-center py-1.5 text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/40 rounded-xl">${store.lang === 'bn' ? 'স্টক শেষ' : 'Out of Stock'}</div>
           ` : `
             <button onclick="window.ProductActions.quickOrder('${p.id}')" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span>Book This Product</span>
+              <span>${store.t('bookProduct')}</span>
             </button>
           `}
         </div>
@@ -125,13 +125,15 @@ export class ProductModule {
               <i data-lucide="package" class="w-6 h-6 text-brand-600"></i>
               <span>${store.t('productsInventory')}</span>
             </h2>
-            <p class="text-xs text-slate-500">Add new products, adjust stock levels, and upload inventory via Excel.</p>
+            <p class="text-xs text-slate-500">
+              ${store.lang === 'bn' ? 'নতুন ওষুধ যোগ করুন, মজুদ সমন্বয় করুন এবং এক্সেলে ইনভেন্টরি পরিচালনা করুন।' : 'Add new products, adjust stock levels, and upload inventory via Excel.'}
+            </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
             <button onclick="window.ProductActions.openAddModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition">
               <i data-lucide="plus-circle" class="w-4 h-4"></i>
-              <span>+ Add New Product</span>
+              <span>${store.t('addNewProduct')}</span>
             </button>
 
             <button onclick="window.ProductActions.downloadTemplate()" class="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 shadow-sm">
@@ -154,7 +156,7 @@ export class ProductModule {
             <input 
               type="text" 
               id="adminProductSearchInput"
-              placeholder="ওষুধের নাম, বাংলা নাম, SKU কোড অথবা ক্যাটাগরি দিয়ে সার্চ করুন..." 
+              placeholder="${store.t('searchPlaceholder')}" 
               autocomplete="off"
               class="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 transition" 
             />
@@ -163,7 +165,7 @@ export class ProductModule {
             </button>
           </div>
           <div id="adminProductCountNotice" class="text-xs font-bold text-slate-500">
-            Showing ${products.length} registered products
+            ${store.lang === 'bn' ? `মোট ${products.length} টি ওষুধ নিবন্ধিত` : `Showing ${products.length} registered products`}
           </div>
         </div>
 
@@ -173,14 +175,14 @@ export class ProductModule {
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-800 font-bold text-slate-400 uppercase">
                 <th class="pb-3">SKU</th>
-                <th class="pb-3">Product Name</th>
-                <th class="pb-3">Category</th>
-                <th class="pb-3">Packing</th>
-                <th class="pb-3">Trade Price (TP)</th>
-                <th class="pb-3">MRP</th>
-                <th class="pb-3">Stock</th>
-                <th class="pb-3">Trade Offer</th>
-                <th class="pb-3 text-right">Actions</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'ওষুধের নাম' : 'Product Name'}</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'ক্যাটাগরি' : 'Category'}</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'প্যাকিং' : 'Packing'}</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'ট্রেড প্রাইস (টিপি)' : 'Trade Price (TP)'}</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'এম.আর.পি' : 'MRP'}</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'মজুদ' : 'Stock'}</th>
+                <th class="pb-3">${store.lang === 'bn' ? 'ট্রেড অফার' : 'Trade Offer'}</th>
+                <th class="pb-3 text-right">${store.t('action')}</th>
               </tr>
             </thead>
             <tbody id="adminInventoryTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -193,10 +195,10 @@ export class ProductModule {
                 >
                   <td class="py-3 font-mono font-bold text-slate-500">${p.sku}</td>
                   <td class="py-3 font-bold text-slate-900 dark:text-white">
-                    ${p.name}
-                    <div class="text-[11px] font-normal text-slate-400">${p.bnName}</div>
+                    ${store.lang === 'bn' ? (p.bnName || p.name) : p.name}
+                    <div class="text-[11px] font-normal text-slate-400">${store.lang === 'bn' ? p.name : (p.bnName || '')}</div>
                   </td>
-                  <td class="py-3 capitalize">${p.category}</td>
+                  <td class="py-3 capitalize">${store.t(p.category) || p.category}</td>
                   <td class="py-3 text-slate-500">${p.packSize}</td>
                   <td class="py-3 font-black text-brand-700 dark:text-brand-400">৳${p.tradePrice}</td>
                   <td class="py-3 text-slate-400">৳${p.mrp}</td>
@@ -210,7 +212,7 @@ export class ProductModule {
                   </td>
                   <td class="py-3 text-tealbrand-600 font-semibold">${p.tradeOffer || '-'}</td>
                   <td class="py-3 text-right">
-                    <button onclick="window.ProductActions.deleteProduct('${p.id}')" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete Product">
+                    <button onclick="window.ProductActions.deleteProduct('${p.id}')" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="${store.lang === 'bn' ? 'ওষুধ মুছুন' : 'Delete Product'}">
                       <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                   </td>
@@ -646,6 +648,8 @@ export class ProductModule {
     const lowStockItems = store.db.products.filter(p => p.stock > 0 && p.stock < 10);
     const cartCount = Object.keys(store.cart.items).length;
 
+    const isBn = store.lang === 'bn';
+
     const modalHtml = `
       <div id="lowStockModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
         <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-rose-200 dark:border-rose-900/60 max-h-[90vh] flex flex-col">
@@ -658,19 +662,19 @@ export class ProductModule {
               </div>
               <div>
                 <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>স্বল্প স্টক ও ইনভেন্টরি ম্যানেজমেন্ট</span>
+                  <span>${isBn ? 'স্বল্প স্টক ও ইনভেন্টরি সতর্কতা' : 'Low Stock & Inventory Alerts'}</span>
                   <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                    ${lowStockItems.length} টি আইটেম
+                    ${lowStockItems.length} ${isBn ? 'টি আইটেম' : 'Items'}
                   </span>
                 </h3>
-                <p class="text-xs text-rose-500 font-semibold">যেসব প্রোডাক্টের স্টক রয়েছে কিন্তু ১০ ইউনিটের নিচে (&lt; 10 Units in stock)</p>
+                <p class="text-xs text-rose-500 font-semibold">${isBn ? 'যেসব ওষুধের মজুদ ১০ ইউনিটের নিচে রয়েছে' : 'Medicines with stock quantity below 10 units'}</p>
               </div>
             </div>
 
             <div class="flex items-center gap-2">
-              <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Go to Stock Management">
+              <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition">
                 <i data-lucide="boxes" class="w-3.5 h-3.5"></i>
-                <span>স্টক ম্যানেজমেন্ট</span>
+                <span>${store.t('stockManage')}</span>
               </button>
               <button onclick="document.getElementById('lowStockModal').remove()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -682,10 +686,10 @@ export class ProductModule {
           <div class="mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-300 flex items-center justify-between gap-3 shrink-0">
             <div class="flex items-center gap-2">
               <i data-lucide="info" class="w-4 h-4 shrink-0 text-amber-600"></i>
-              <span><b>স্টক ম্যানেজ করুন:</b> সরাসরি স্টক বাড়াতে <b>+১০, +৫০, +১০০</b> বাটনে চাপ দিন অথবা নির্দিষ্ট সংখ্যা লিখে <b>"যোগ"</b> করুন।</span>
+              <span>${isBn ? 'মজুদ দ্রুত বাড়াতে +১০, +৫০, +১০০ চাপুন অথবা সংখ্যা লিখে যোগ করুন।' : 'Quickly increase stock with +10, +50, +100 buttons or type exact quantity.'}</span>
             </div>
             <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="whitespace-nowrap px-3 py-1 rounded-lg bg-white dark:bg-slate-800 font-bold text-[11px] text-brand-700 dark:text-brand-300 shadow-sm border border-amber-200 hover:bg-amber-100">
-              সব স্টক ম্যানেজ করুন →
+              ${isBn ? 'সম্পূর্ণ স্টক ম্যানেজমেন্ট →' : 'All Stock Management →'}
             </button>
           </div>
 
@@ -694,8 +698,8 @@ export class ProductModule {
             ${lowStockItems.length === 0 ? `
               <div class="text-center py-12 text-slate-400">
                 <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto mb-2 text-emerald-500 opacity-80"></i>
-                <p class="text-sm font-bold text-slate-700 dark:text-slate-200">কোন লো স্টক আইটেম নেই!</p>
-                <p class="text-xs mt-1">সব ইন-স্টক প্রোডাক্টের পরিমাণ পর্যাপ্ত (১০ ইউনিটের বেশি) রয়েছে।</p>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-200">${isBn ? 'কোনো স্বল্প স্টক ওষুধ নেই' : 'No Low Stock Items!'}</p>
+                <p class="text-xs mt-1">${isBn ? 'সব ওষুধের মজুদ সন্তোষজনক রয়েছে।' : 'All medicine stock levels are currently adequate.'}</p>
               </div>
             ` : `
               ${lowStockItems.map(p => `
@@ -705,17 +709,17 @@ export class ProductModule {
                   <div class="space-y-1">
                     <div class="flex items-center gap-2">
                       <span class="font-mono font-bold text-xs text-brand-700 dark:text-brand-400">${p.sku}</span>
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">${p.category}</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">${store.t(p.category) || p.category}</span>
                       <span class="text-xs px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 animate-pulse">
-                        অবশিষ্ট স্টক: <b>${p.stock} টি</b>
+                        ${isBn ? `মজুদ: ${p.stock} টি` : `Stock: ${p.stock} units`}
                       </span>
                     </div>
 
-                    <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${p.name}</h4>
-                    <p class="text-xs text-slate-500">${p.bnName} • ${p.packSize}</p>
+                    <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${isBn ? (p.bnName || p.name) : p.name}</h4>
+                    <p class="text-xs text-slate-500">${isBn ? p.name : (p.bnName || '')} • ${p.packSize}</p>
                     <div class="text-xs font-bold text-brand-700 dark:text-brand-400 flex items-center gap-3 pt-0.5">
-                      <span>Trade Price (TP): ৳${p.tradePrice}</span>
-                      <span>MRP: ৳${p.mrp}</span>
+                      <span>${store.t('unitTP')}: ৳${p.tradePrice}</span>
+                      <span>${store.t('mrp')}: ৳${p.mrp}</span>
                       ${p.tradeOffer ? `<span class="text-tealbrand-600 font-semibold">• ${p.tradeOffer}</span>` : ''}
                     </div>
                   </div>
@@ -725,14 +729,14 @@ export class ProductModule {
                     
                     <!-- Quick Restock Pill Buttons -->
                     <div class="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <span class="text-[10px] font-bold text-slate-400 px-1">স্টক যোগ:</span>
-                      <button onclick="window.ProductActions.restockProduct('${p.id}', 10)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition" title="Add 10 to stock">
+                      <span class="text-[10px] font-bold text-slate-400 px-1">${isBn ? 'যোগ:' : 'Add:'}</span>
+                      <button onclick="window.ProductActions.restockProduct('${p.id}', 10)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition">
                         +10
                       </button>
-                      <button onclick="window.ProductActions.restockProduct('${p.id}', 50)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition" title="Add 50 to stock">
+                      <button onclick="window.ProductActions.restockProduct('${p.id}', 50)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition">
                         +50
                       </button>
-                      <button onclick="window.ProductActions.restockProduct('${p.id}', 100)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition" title="Add 100 to stock">
+                      <button onclick="window.ProductActions.restockProduct('${p.id}', 100)" class="px-2 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-sm border border-slate-200 dark:border-slate-600 transition">
                         +100
                       </button>
                     </div>
@@ -742,18 +746,18 @@ export class ProductModule {
                       <input 
                         type="number" 
                         id="customStock-${p.id}" 
-                        placeholder="Qty" 
+                        placeholder="${isBn ? 'সংখ্যা' : 'Qty'}" 
                         class="w-16 px-2 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-center" 
                       />
-                      <button onclick="const el = document.getElementById('customStock-${p.id}'); if(el && el.value) window.ProductActions.restockProduct('${p.id}', Number(el.value));" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-sm transition" title="Save Custom Added Stock">
-                        যোগ
+                      <button onclick="const el = document.getElementById('customStock-${p.id}'); if(el && el.value) window.ProductActions.restockProduct('${p.id}', Number(el.value));" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-sm transition">
+                        ${isBn ? 'যোগ' : 'Add'}
                       </button>
                     </div>
 
                     <!-- Add to Order Slip Button -->
-                    <button onclick="document.getElementById('lowStockModal').remove(); window.ProductActions.quickOrder('${p.id}');" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow flex items-center gap-1.5 active:scale-95 transition" title="Add to Order Slip and open slip screen">
+                    <button onclick="document.getElementById('lowStockModal').remove(); window.ProductActions.quickOrder('${p.id}');" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow flex items-center gap-1.5 active:scale-95 transition">
                       <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
-                      <span>স্লিপে নিন ও দেখুন</span>
+                      <span>${isBn ? 'স্লিপে নিন' : 'Add to Order'}</span>
                     </button>
                   </div>
                 </div>
@@ -764,17 +768,17 @@ export class ProductModule {
           <!-- Footer -->
           <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between shrink-0 gap-3 text-xs">
             <div class="text-slate-500 font-medium">
-              মোট স্বল্প-স্টক ওষুধ: <b>${lowStockItems.length}</b> টি (স্বয়ংক্রিয় রিয়েলটাইম সিঙ্ক)
+              ${isBn ? `মোট স্বল্প-স্টক ওষুধ: ${lowStockItems.length} টি` : `Total low stock items: ${lowStockItems.length}`}
             </div>
             
             <div class="flex items-center gap-2">
               <button onclick="document.getElementById('lowStockModal').remove(); window.App.navigate('stock_manage');" class="px-4 py-2 rounded-xl border border-brand-300 dark:border-brand-800 bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="boxes" class="w-3.5 h-3.5"></i>
-                <span>সম্পূর্ণ স্টক ম্যানেজমেন্ট খুলুন (Stock Management)</span>
+                <span>${store.t('stockManage')}</span>
               </button>
 
               <button onclick="document.getElementById('lowStockModal').remove()" class="px-5 py-2 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">
-                বন্ধ করুন (Close)
+                ${store.t('cancel')}
               </button>
             </div>
           </div>

@@ -11,6 +11,7 @@ export class CustomerModule {
     const isApproved = c.status === 'approved';
     const assignedSR = store.db.srs.find(s => s.id === (c.assignedSrId || c.createdBy));
     const isAdmin = store.authSession.role === 'admin';
+    const isBn = store.lang === 'bn';
 
     return `
       <div class="customer-card p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-brand-500/50 transition" data-id="${c.id}" data-name="${(c.shopName || '').toLowerCase()} ${(c.name || '').toLowerCase()}" data-address="${(c.address || '').toLowerCase()}" data-phone="${(c.phone || '').toLowerCase()}" data-srid="${(c.assignedSrId || c.createdBy || '').toLowerCase()}">
@@ -32,17 +33,17 @@ export class CustomerModule {
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isApproved ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
               }">
-                ${isApproved ? 'Approved' : 'Pending Approval'}
+                ${isApproved ? (isBn ? 'অনুমোদিত' : 'Approved') : (isBn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval')}
               </span>
             </div>
           </div>
 
-          <!-- Required Bold Format: BH0002 Amin Feed -->
+          <!-- Bold Format: BH0002 Amin Feed -->
           <h3 class="font-black text-lg text-slate-900 dark:text-white tracking-tight">
             <span class="text-brand-700 dark:text-brand-400 font-mono">${c.id}</span> ${c.shopName}
           </h3>
 
-          <!-- Required Full Address: 1/2 bonani, bogura -->
+          <!-- Full Address: 1/2 bonani, bogura -->
           <div class="text-xs text-slate-600 dark:text-slate-300 mt-1.5 flex items-start gap-1.5 font-medium">
             <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0"></i>
             <span>${c.address}</span>
@@ -50,18 +51,18 @@ export class CustomerModule {
 
           <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs text-slate-500">
             <div>
-              <span class="text-[11px] block text-slate-400">Proprietor:</span>
+              <span class="text-[11px] block text-slate-400">${store.t('proprietorCol')}:</span>
               <span class="font-bold text-slate-800 dark:text-slate-200">${c.name}</span>
             </div>
             <div>
-              <span class="text-[11px] block text-slate-400">Contact:</span>
+              <span class="text-[11px] block text-slate-400">${isBn ? 'যোগাযোগ:' : 'Contact:'}</span>
               <a href="tel:${c.phone}" class="font-mono font-bold hover:text-brand-600">${c.phone}</a>
             </div>
           </div>
 
           ${isAdmin ? `
             <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
-              <span class="text-slate-400">Assigned SR Rep:</span>
+              <span class="text-slate-400">${store.t('assignedSrRep')}</span>
               <select onchange="window.CustomerActions.reassignSR('${c.id}', this.value)" class="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5">
                 ${store.db.srs.map(s => `
                   <option value="${s.id}" ${(c.assignedSrId || c.createdBy) === s.id ? 'selected' : ''}>
@@ -81,14 +82,14 @@ export class CustomerModule {
             </button>
           ` : `
             <div class="flex-1 py-2 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-bold text-center">
-              Waiting for Admin Approval
+              ${isBn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Waiting for Admin Approval'}
             </div>
           `}
           <a href="https://wa.me/88${c.phone.replace(/[^0-9]/g, '')}" target="_blank" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600" title="WhatsApp">
             <i data-lucide="message-circle" class="w-4 h-4"></i>
           </a>
           ${isAdmin ? `
-            <button onclick="window.CustomerActions.deleteCustomer('${c.id}')" class="p-2 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition" title="Delete Customer">
+            <button onclick="window.CustomerActions.deleteCustomer('${c.id}')" class="p-2 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition" title="${isBn ? 'গ্রাহক মুছুন' : 'Delete Customer'}">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
           ` : ''}
@@ -100,6 +101,7 @@ export class CustomerModule {
   renderCustomerSection(onBookOrder: (id: string) => void): string {
     const isAdmin = store.authSession.role === 'admin';
     const currentSrId = store.authSession.user?.id;
+    const isBn = store.lang === 'bn';
 
     // RULE: An SR only sees customers assigned to them! Admin sees all.
     const customers = isAdmin
@@ -126,11 +128,11 @@ export class CustomerModule {
 
           ${isAdmin ? `
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-slate-500 whitespace-nowrap hidden sm:inline">Filter by SR:</span>
+              <span class="text-xs font-bold text-slate-500 whitespace-nowrap hidden sm:inline">${store.t('filterBySR')}</span>
               <select id="adminSrCustomerFilter" onchange="window.CustomerActions.filterBySr(this.value)" class="text-xs font-bold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                <option value="all">All SRs (${store.db.customers.length} Customers)</option>
+                <option value="all">${store.t('allSRsOption')} (${store.db.customers.length})</option>
                 ${store.db.srs.map(s => {
-                  const cnt = store.db.customers.filter(c => (c.assignedSrId || c.createdBy) === s.id).length;
+                  const cnt = store.db.customers.filter(c => (c.assignedSrId || c.createdBy || '').trim().toLowerCase() === (s.id || '').trim().toLowerCase()).length;
                   return `<option value="${s.id}">${s.id} - ${s.name} (${cnt})</option>`;
                 }).join('')}
               </select>
@@ -138,34 +140,34 @@ export class CustomerModule {
           ` : `
             <div class="text-xs px-3 py-1.5 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-800 dark:text-brand-300 font-bold border border-brand-200 dark:border-brand-800 flex items-center gap-1.5">
               <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-              <span>Assigned to You (${store.authSession.user?.name})</span>
+              <span>${store.t('assignedToYou')} (${store.authSession.user?.name})</span>
             </div>
           `}
 
           ${isAdmin ? `
             <div class="flex flex-wrap items-center gap-2">
-              <button onclick="window.CustomerActions.downloadTemplate()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 shadow-sm" title="Download Excel Template">
+              <button onclick="window.CustomerActions.downloadTemplate()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 shadow-sm" title="${store.t('downloadTemplate')}">
                 <i data-lucide="download" class="w-3.5 h-3.5 text-brand-600"></i>
-                <span class="hidden sm:inline">Template</span>
+                <span class="hidden sm:inline">${store.t('template')}</span>
               </button>
 
               <input type="file" id="excelCustomerFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.CustomerActions.handleUpload(event)" />
-              <button onclick="document.getElementById('excelCustomerFileInput').click()" class="px-3 py-2 rounded-xl bg-tealbrand-600 hover:bg-tealbrand-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Import Customers from Excel">
+              <button onclick="document.getElementById('excelCustomerFileInput').click()" class="px-3 py-2 rounded-xl bg-tealbrand-600 hover:bg-tealbrand-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm" title="${store.t('importExcel')}">
                 <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-                <span>Import Excel</span>
+                <span>${store.t('importExcel')}</span>
               </button>
             </div>
           ` : ''}
 
           <button onclick="window.CustomerActions.openAddModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs shadow flex items-center gap-1.5 transition active:scale-95">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
-            <span>${isAdmin ? 'Add Customer' : store.t('addCustomer')}</span>
+            <span>${isAdmin ? (isBn ? '+ নতুন গ্রাহক' : '+ Add Customer') : store.t('addCustomer')}</span>
           </button>
         </div>
 
         <!-- Filter Count Indicator -->
         <div id="customerCountNotice" class="text-xs font-semibold text-slate-500 px-1">
-          Showing ${customers.length} ${!isAdmin ? 'customers assigned to your territory' : 'total registered customers'}
+          ${isBn ? `মোট ${customers.length} জন গ্রাহক প্রদর্শিত` : `Showing ${customers.length} registered customers`}
         </div>
 
         <!-- Customer Grid Container (Updated in-place on typing!) -->
@@ -173,8 +175,8 @@ export class CustomerModule {
           ${customers.length === 0 ? `
             <div class="col-span-2 text-center py-12 text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
               <i data-lucide="users" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
-              <p class="text-xs font-bold text-slate-600 dark:text-slate-300">কোন কাস্টমার অ্যাসাইন করা হয়নি (No Customers Assigned)</p>
-              <p class="text-[11px] text-slate-400 mt-1">অ্যাডমিন প্যানেল থেকে এই এসআর আইডি (${currentSrId})-তে কাস্টমার অ্যাসাইন করতে হবে অথবা নতুন কাস্টমার রিকোয়েস্ট পাঠান।</p>
+              <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${store.t('noCustomersAssigned')}</p>
+              <p class="text-[11px] text-slate-400 mt-1">${store.t('noCustomersAssignedSub')}</p>
             </div>
           ` : customers.map(c => this.renderCustomerCard(c, onBookOrder)).join('')}
         </div>
@@ -196,6 +198,8 @@ export class CustomerModule {
 
     const performFilter = (query: string) => {
       const q = query.trim().toLowerCase();
+      const srSelect = document.getElementById('adminSrCustomerFilter') as HTMLSelectElement | null;
+      const targetSr = (srSelect?.value || 'all').trim().toLowerCase();
       const cards = grid.querySelectorAll<HTMLElement>('.customer-card');
       let visibleCount = 0;
 
@@ -204,10 +208,12 @@ export class CustomerModule {
         const name = card.getAttribute('data-name') || '';
         const addr = card.getAttribute('data-address') || '';
         const phone = card.getAttribute('data-phone') || '';
-        const srid = card.getAttribute('data-srid') || '';
+        const cardSrId = (card.getAttribute('data-srid') || '').trim().toLowerCase();
 
-        const matches = !q || id.includes(q) || name.includes(q) || addr.includes(q) || phone.includes(q) || srid.includes(q);
-        if (matches) {
+        const srMatches = targetSr === 'all' || cardSrId === targetSr;
+        const textMatches = !q || id.includes(q) || name.includes(q) || addr.includes(q) || phone.includes(q);
+
+        if (srMatches && textMatches) {
           card.style.display = '';
           visibleCount++;
         } else {
@@ -216,7 +222,14 @@ export class CustomerModule {
       });
 
       if (notice) {
-        notice.innerText = q ? `Found ${visibleCount} customer(s) matching "${q}"` : `Showing ${cards.length} animal health customers`;
+        const isBn = store.lang === 'bn';
+        if (q) {
+          notice.innerText = isBn ? `"${query}" এর সাথে মিলেছে ${visibleCount} জন গ্রাহক` : `Found ${visibleCount} customer(s) matching "${q}"`;
+        } else if (targetSr === 'all') {
+          notice.innerText = isBn ? `মোট ${visibleCount} জন গ্রাহক প্রদর্শিত` : `Showing ${visibleCount} registered customers`;
+        } else {
+          notice.innerText = isBn ? `এসআর (${srSelect?.value}) এর অধীনে ${visibleCount} জন গ্রাহক প্রদর্শিত` : `Showing ${visibleCount} customer(s) assigned to SR: ${srSelect?.value}`;
+        }
       }
 
       if (clearBtn) {
@@ -249,13 +262,14 @@ export class CustomerModule {
 
   openAddCustomerModal(onCustomerAdded: () => void) {
     const isAdmin = store.authSession.role === 'admin';
+    const isBn = store.lang === 'bn';
     const modalHtml = `
       <div id="customerAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <h3 class="font-extrabold text-base sm:text-lg flex items-center gap-2">
               <i data-lucide="user-plus" class="w-5 h-5 text-brand-600"></i>
-              <span>${isAdmin ? 'Add Approved Customer' : store.t('addCustomer')}</span>
+              <span>${isAdmin ? (isBn ? 'নতুন অনুমোদিত গ্রাহক যোগ' : 'Add Approved Customer') : store.t('addCustomer')}</span>
             </h3>
             <button onclick="document.getElementById('customerAddModal').remove()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
               <i data-lucide="x" class="w-5 h-5"></i>
@@ -265,17 +279,17 @@ export class CustomerModule {
           <form id="newCustForm" class="mt-4 space-y-3.5 text-xs">
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('shopName')} *</label>
-              <input type="text" id="custShopName" required placeholder="Ex: Amin Feed / Green Valley Dairy Farm" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold" />
+              <input type="text" id="custShopName" required placeholder="${isBn ? 'যেমন: আমিন ফিড / গ্রিন ডেইরি ফার্ম' : 'Ex: Amin Feed / Green Valley Farm'}" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold" />
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('address')} (Full Address) *</label>
-              <input type="text" id="custAddress" required placeholder="Ex: 1/2 bonani, bogura" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium" />
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('address')} *</label>
+              <input type="text" id="custAddress" required placeholder="${isBn ? 'যেমন: ১/২ বনানী, বগুড়া' : 'Ex: 1/2 bonani, bogura'}" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium" />
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('customerName')} *</label>
-              <input type="text" id="custOwnerName" required placeholder="Owner or Manager Name" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+              <input type="text" id="custOwnerName" required placeholder="${isBn ? 'মালিক বা ডাক্তারের নাম' : 'Owner or Manager Name'}" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -296,12 +310,12 @@ export class CustomerModule {
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('territory')} *</label>
-              <input type="text" id="custTerritory" value="${store.authSession.user?.territory || 'Bogura Dairy Zone'}" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+              <input type="text" id="custTerritory" value="${store.authSession.user?.territory || (isBn ? 'বগুড়া ডেইরি জোন' : 'Bogura Dairy Zone')}" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
             </div>
 
             ${isAdmin ? `
               <div>
-                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Assign to Field SR *</label>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('assignedSrRep')} *</label>
                 <select id="custAssignedSr" class="w-full px-3 py-2 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-slate-800 font-bold text-purple-900 dark:text-purple-300">
                   ${store.db.srs.map(s => `
                     <option value="${s.id}">${s.id} - ${s.name} (${s.territory})</option>
@@ -311,7 +325,7 @@ export class CustomerModule {
             ` : ''}
 
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('creditLimit')} (৳)</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">${store.t('creditLimit')}</label>
               <input type="number" id="custCreditLimit" value="100000" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono" />
             </div>
 
@@ -320,7 +334,7 @@ export class CustomerModule {
                 ${store.t('cancel')}
               </button>
               <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold shadow-md">
-                ${isAdmin ? 'Save Customer' : 'Submit for Admin Approval'}
+                ${isAdmin ? (isBn ? 'গ্রাহক সংরক্ষণ করুন' : 'Save Customer') : (isBn ? 'অনুমোদনের জন্য আবেদন' : 'Submit for Admin Approval')}
               </button>
             </div>
           </form>
@@ -372,6 +386,7 @@ export class CustomerModule {
 
   renderAdminApprovals(onAction: () => void): string {
     const pending = store.db.customers.filter(c => c.status === 'pending');
+    const isBn = store.lang === 'bn';
 
     return `
       <div class="space-y-6">
@@ -381,18 +396,20 @@ export class CustomerModule {
               <i data-lucide="user-check" class="w-6 h-6 text-amber-500"></i>
               <span>${store.t('pendingApprovals')}</span>
             </h2>
-            <p class="text-xs text-slate-500">Approve or reject customer requests submitted by field SRs.</p>
+            <p class="text-xs text-slate-500">
+              ${isBn ? 'ফিল্ড এসআরদের পাঠানো নতুন গ্রাহকের আবেদন অনুমোদন বা বাতিল করুন।' : 'Approve or reject customer requests submitted by field SRs.'}
+            </p>
           </div>
           <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-            ${pending.length} Requests Pending
+            ${isBn ? `${pending.length} টি আবেদন অপেক্ষমাণ` : `${pending.length} Requests Pending`}
           </span>
         </div>
 
         ${pending.length === 0 ? `
           <div class="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400">
             <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto mb-3 text-emerald-500 opacity-80"></i>
-            <h4 class="font-bold text-sm text-slate-700 dark:text-slate-200">No Pending Requests</h4>
-            <p class="text-xs mt-1">All field customer accounts are approved and verified.</p>
+            <h4 class="font-bold text-sm text-slate-700 dark:text-slate-200">${isBn ? 'কোনো অপেক্ষমাণ আবেদন নেই' : 'No Pending Requests'}</h4>
+            <p class="text-xs mt-1">${isBn ? 'সকল ফিল্ড গ্রাহক একাউন্ট অনুমোদিত ও যাচাইকৃত।' : 'All field customer accounts are approved and verified.'}</p>
           </div>
         ` : `
           <div class="space-y-3">
@@ -401,13 +418,13 @@ export class CustomerModule {
                 <div>
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-xs font-extrabold text-amber-800 dark:text-amber-400 uppercase tracking-wider">${c.shopName}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-semibold">${c.category}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-semibold">${store.t(c.category) || c.category}</span>
                   </div>
                   <h4 class="text-sm font-bold text-slate-900 dark:text-white">${c.name} • <span class="font-mono text-xs text-slate-500">${c.phone}</span></h4>
-                  <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium">Full Address: <b>${c.address}</b></p>
-                  <p class="text-[11px] text-brand-700 dark:text-brand-400 mt-1 font-semibold">Territory: ${c.territory} • Submitted by: <b>${c.createdBy}</b></p>
+                  <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium">${store.t('address')}: <b>${c.address}</b></p>
+                  <p class="text-[11px] text-brand-700 dark:text-brand-400 mt-1 font-semibold">${store.t('territory')}: ${c.territory} • ${isBn ? 'আবেদনকারী:' : 'Submitted by:'} <b>${c.createdBy}</b></p>
                   <div class="mt-2 flex items-center gap-2 text-xs">
-                    <span class="font-bold text-slate-500">Assign to SR:</span>
+                    <span class="font-bold text-slate-500">${store.t('assignedSrRep')}</span>
                     <select id="approveAssignSr-${c.id}" class="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-800 dark:text-slate-200 text-xs">
                       ${store.db.srs.map(s => `
                         <option value="${s.id}" ${(c.assignedSrId || c.createdBy) === s.id ? 'selected' : ''}>
@@ -420,11 +437,11 @@ export class CustomerModule {
 
                 <div class="flex items-center gap-2">
                   <button onclick="window.CustomerActions.rejectCustomer('${c.id}')" class="px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900 text-rose-600 hover:bg-rose-50 text-xs font-bold transition">
-                    Reject
+                    ${store.t('reject')}
                   </button>
                   <button onclick="window.CustomerActions.approveCustomer('${c.id}')" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5">
                     <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    <span>Approve & Assign BH ID</span>
+                    <span>${isBn ? 'অনুমোদন ও বিএইচ আইডি বরাদ্দ' : 'Approve & Assign BH ID'}</span>
                   </button>
                 </div>
               </div>
