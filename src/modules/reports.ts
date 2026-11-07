@@ -231,6 +231,53 @@ export class ReportModule {
           </div>
         </div>
 
+        <!-- Report Category Medium Dropdown (Above Search Option) -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400">
+              <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <label for="reportCategoryFilter" class="block font-black text-xs sm:text-sm text-slate-800 dark:text-slate-100">
+                ${isBN ? 'রিপোর্ট ক্যাটাগরি নির্বাচন করুন' : 'Select Report Category'}
+              </label>
+              <p class="text-[11px] text-slate-400">
+                ${isBN ? 'যে ক্যাটাগরি সিলেক্ট করবেন নিচে কেবল সেই রিপোর্টটি প্রদর্শিত হবে' : 'Choose a specific report view or show all reports combined'}
+              </p>
+            </div>
+          </div>
+
+          <div class="w-full sm:w-auto min-w-[260px]">
+            <select 
+              id="reportCategoryFilter" 
+              onchange="window.ReportActions.filterCategory(this.value)" 
+              class="w-full px-4 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 shadow-sm transition"
+            >
+              <option value="all" selected>
+                📊 ${isBN ? 'সকল রিপোর্ট (All Report)' : 'All Reports (Default)'}
+              </option>
+              <option value="daywise">
+                📅 ${isBN ? 'দৈনিক বিক্রয় রিপোর্ট (Day-wise Report)' : 'Day-wise Sales Report'}
+              </option>
+              <option value="customer">
+                👥 ${isBN ? 'গ্রাহকভিত্তিক রিপোর্ট (Customer-wise Report)' : 'Customer-wise Sales Report'}
+              </option>
+              <option value="product">
+                📦 ${isBN ? 'পণ্যভিত্তিক রিপোর্ট (Product-wise Sales)' : 'Product-wise Sales Report'}
+              </option>
+              ${!isSR ? `
+                <option value="sr">
+                  🏆 ${isBN ? 'এসআর পারফরম্যান্স রিপোর্ট (SR-wise Report)' : 'SR-wise Performance Report'}
+                </option>
+              ` : `
+                <option value="sr">
+                  🎯 ${isBN ? 'আমার টার্গেট ও পারফরম্যান্স (My SR Target)' : 'My SR Target & Performance'}
+                </option>
+              `}
+            </select>
+          </div>
+        </div>
+
         <!-- Real-time Report Search Input -->
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
           <div class="relative flex-1 min-w-[260px]">
@@ -252,7 +299,7 @@ export class ReportModule {
         </div>
 
         <!-- 1. DAY-WISE SALES REPORT -->
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div data-report-section="daywise" class="report-section-card p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
               <div class="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600">
@@ -306,7 +353,7 @@ export class ReportModule {
         </div>
 
         <!-- 2. CUSTOMER-WISE SALES REPORT -->
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div data-report-section="customer" class="report-section-card p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
               <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600">
@@ -379,7 +426,7 @@ export class ReportModule {
         </div>
 
         <!-- 3. PRODUCT-WISE SALES REPORT -->
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div data-report-section="product" class="report-section-card p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
               <div class="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600">
@@ -433,9 +480,10 @@ export class ReportModule {
         </div>
 
         <!-- 4. ADMIN-ONLY REPORTS (SR Ranking & Inventory Valuation) -->
+        <!-- 4. SR PERFORMANCE & INVENTORY REPORTS -->
         ${!isSR ? `
-          <!-- SR-WISE SALES REPORT -->
-          <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <!-- SR-WISE SALES REPORT (Admin) -->
+          <div data-report-section="sr" class="report-section-card p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex items-center gap-2">
                 <div class="p-2 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600"><i data-lucide="trophy" class="w-4 h-4"></i></div>
@@ -492,8 +540,8 @@ export class ReportModule {
             </div>
           </div>
 
-          <!-- INVENTORY & STOCK VALUATION REPORT -->
-          <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <!-- INVENTORY & STOCK VALUATION REPORT (Admin) -->
+          <div data-report-section="product" class="report-section-card p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex items-center gap-2">
                 <div class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600"><i data-lucide="archive" class="w-4 h-4"></i></div>
@@ -532,7 +580,49 @@ export class ReportModule {
               </table>
             </div>
           </div>
-        ` : ''}
+        ` : `
+          <!-- SR Target & Territory Performance Card (SR Site) -->
+          <div data-report-section="sr" class="report-section-card p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600">
+                <i data-lucide="target" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
+                  ${isBN ? 'আমার টার্গেট ও পারফরম্যান্স বিশ্লেষণ' : 'My Target & Sales Performance'}
+                </h3>
+                <p class="text-[11px] text-slate-500">
+                  ${isBN ? `${currentSr?.territory || ''} টেরিটরির সেলস লক্ষ্য ও অর্জন` : `Monthly targets and achievement progress for ${currentSr?.territory || ''}`}
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+                <div class="text-[11px] font-bold text-slate-400 uppercase">${store.t('target')}</div>
+                <div class="text-xl font-black mt-1 text-slate-900 dark:text-white">৳${srTarget.toLocaleString()}</div>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+                <div class="text-[11px] font-bold text-amber-600 uppercase">${store.t('achievement')} (${srPct}%)</div>
+                <div class="text-xl font-black mt-1 text-amber-600">৳${totalSalesAmount.toLocaleString()}</div>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+                <div class="text-[11px] font-bold text-brand-600 uppercase">${isBN ? 'অর্ডারের সংখ্যা' : 'Total Bookings'}</div>
+                <div class="text-xl font-black mt-1 text-brand-700 dark:text-brand-300">${orders.length} টি</div>
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-600 dark:text-slate-400">${isBN ? 'টার্গেট পূরণ:' : 'Goal Completed:'}</span>
+                <span class="text-brand-600 font-mono">${srPct}%</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-200 dark:border-slate-700">
+                <div class="bg-brand-600 h-full rounded-full transition-all duration-500" style="width: ${srPct}%"></div>
+              </div>
+            </div>
+          </div>
+        `}
 
       </div>
     `;

@@ -577,17 +577,84 @@ export const App = {
   },
 
   renderFooter(isAdmin: boolean): string {
+    const isBn = store.lang === 'bn';
     return `
-      <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-brand-800 dark:text-brand-400">BH Agro Ltd.</span>
-            <span>• Veterinary Pharmaceuticals & Animal Health ERP</span>
+      <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-5 text-slate-600 dark:text-slate-400 text-xs">
+        <div class="max-w-7xl mx-auto px-4 space-y-4">
+          <!-- Top row: App branding & ERP System Info -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 text-[11px]">
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-brand-700 dark:text-brand-400 text-sm">BH Agro Ltd.</span>
+              <span class="hidden sm:inline">•</span>
+              <span class="font-medium">${isBn ? 'প্রাণিসম্পদ স্বাস্থ্য ও ওষুধ ব্যবস্থাপনা ইআরপি' : 'Veterinary Pharmaceuticals & Animal Health ERP'}</span>
+            </div>
+            <div class="flex items-center gap-3 font-semibold">
+              <span>Portal: <b class="${isAdmin ? 'text-purple-600' : 'text-brand-600'}">${isAdmin ? (isBn ? 'অ্যাডমিন কন্ট্রোল' : 'Admin Control') : (isBn ? 'এসআর ফিল্ড বুকিং' : 'SR Field Booking')}</b></span>
+              <span>•</span>
+              <span class="${store.isFirebaseReady ? 'text-emerald-600' : 'text-amber-600'} flex items-center gap-1.5 font-bold">
+                <span class="w-2 h-2 rounded-full ${store.isFirebaseReady ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
+                <span>${store.isFirebaseReady ? (isBn ? 'ক্লাউড লাইভ সিঙ্ক' : 'Firebase Connected') : (isBn ? 'অফলাইন মোড' : 'Offline Mode')}</span>
+              </span>
+            </div>
           </div>
-          <div class="flex items-center gap-3 font-semibold text-[11px]">
-            <span>Portal: <b class="${isAdmin ? 'text-purple-600' : 'text-brand-600'}">${isAdmin ? 'Admin Control' : 'SR Field Booking'}</b></span>
-            <span>•</span>
-            <span class="text-brand-600">${store.isFirebaseReady ? 'Firebase Connected' : 'Offline Mode'}</span>
+
+          <!-- Bottom row: Developer Information Badge (Requested by User) -->
+          <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[10px] uppercase tracking-wider">
+                ${isBn ? 'ডেভেলপার' : 'Developer'}
+              </span>
+              <span class="font-black text-slate-900 dark:text-white tracking-wide text-sm">
+                MD. SALIM HOSSAIN
+              </span>
+            </div>
+
+            <!-- Contact & Social Action Buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-2 font-mono">
+              <!-- Phone with Call Button -->
+              <a 
+                href="tel:01737462871" 
+                class="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-800 dark:text-slate-100 hover:text-brand-600 border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                title="Call 01737462871"
+              >
+                <i data-lucide="phone-call" class="w-3.5 h-3.5 text-brand-600"></i>
+                <span>01737462871</span>
+              </a>
+
+              <!-- Clickable WhatsApp Logo -->
+              <a 
+                href="https://wa.me/8801737462871" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                title="Chat on WhatsApp"
+              >
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>WhatsApp</span>
+              </a>
+
+              <!-- Email Link -->
+              <a 
+                href="mailto:salimbd.ga@gmail.com" 
+                class="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-800 dark:text-slate-100 hover:text-blue-600 border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                title="salimbd.ga@gmail.com"
+              >
+                <i data-lucide="mail" class="w-3.5 h-3.5 text-blue-600"></i>
+                <span class="text-xs">salimbd.ga@gmail.com</span>
+              </a>
+
+              <!-- Clickable Facebook Logo -->
+              <a 
+                href="https://fb.com/salim.naogaon" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                title="Facebook: fb.com/salim.naogaon"
+              >
+                <i data-lucide="facebook" class="w-3.5 h-3.5 text-blue-600"></i>
+                <span>fb.com/salim.naogaon</span>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
@@ -1399,7 +1466,24 @@ export const App = {
   exportCustomerWise: () => reportModule.exportCustomerWiseToExcel(showToast),
   exportDaywise: () => reportModule.exportDaywiseToExcel(showToast),
   exportProductSales: () => reportModule.exportProductSalesToExcel(showToast),
-  exportStock: () => reportModule.exportStockToExcel(showToast)
+  exportStock: () => reportModule.exportStockToExcel(showToast),
+  filterCategory: (cat: string) => {
+    const sections = document.querySelectorAll<HTMLElement>('[data-report-section]');
+    sections.forEach(sec => {
+      const secCat = sec.getAttribute('data-report-section');
+      if (cat === 'all' || secCat === cat) {
+        sec.style.display = '';
+      } else {
+        sec.style.display = 'none';
+      }
+    });
+
+    // Re-apply any active search filter within the visible section
+    const searchInput = document.getElementById('reportSearchInput') as HTMLInputElement | null;
+    if (searchInput && searchInput.value) {
+      searchInput.dispatchEvent(new Event('input'));
+    }
+  }
 };
 
 // Application Bootstrap with Veterinary Splash Screen Transition

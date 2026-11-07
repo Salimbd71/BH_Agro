@@ -126,6 +126,29 @@ export class AuthModule {
             </button>
           </div>
 
+          <!-- Developer Info (Requested by User) -->
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500 space-y-2">
+            <div class="flex items-center justify-center gap-1.5">
+              <span class="text-[10px] font-bold uppercase text-slate-400">Developer:</span>
+              <span class="font-black text-slate-800 dark:text-slate-100">MD. SALIM HOSSAIN</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-0.5 font-mono text-[11px]">
+              <a href="tel:01737462871" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:text-brand-600 flex items-center gap-1">
+                <i data-lucide="phone-call" class="w-3 h-3 text-brand-600"></i>
+                <span>01737462871</span>
+              </a>
+              <a href="https://wa.me/8801737462871" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 hover:bg-emerald-100 transition" title="WhatsApp">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+              </a>
+              <a href="mailto:salimbd.ga@gmail.com" class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 hover:bg-blue-100 transition" title="salimbd.ga@gmail.com">
+                <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+              </a>
+              <a href="https://fb.com/salim.naogaon" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-700 hover:bg-blue-100 transition" title="Facebook: fb.com/salim.naogaon">
+                <i data-lucide="facebook" class="w-3.5 h-3.5"></i>
+              </a>
+            </div>
+          </div>
+
         </div>
       </div>
     `;

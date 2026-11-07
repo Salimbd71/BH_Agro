@@ -217,31 +217,31 @@ export function renderSRHeroBanner(): string {
   const achievementPct = target > 0 ? Math.min(100, Math.round((totalSalesAchieved / target) * 100)) : 0;
 
   return `
-    <div class="p-6 rounded-3xl bg-gradient-to-r from-brand-800 via-brand-700 to-tealbrand-700 text-white shadow-xl relative overflow-hidden mb-6">
-      <div class="relative z-10 space-y-4">
+    <div class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm mb-6">
+      <div class="space-y-4">
         
         <!-- Header badge & Greeting -->
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 backdrop-blur border border-white/20">
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               ${store.authSession.user?.territory || (isBN ? 'ফিল্ড টেরিটরি' : 'Territory Field')}
             </span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight">
+            <h2 class="text-2xl sm:text-3xl font-extrabold mt-2 tracking-tight text-slate-900 dark:text-white">
               ${isBN ? 'স্বাগতম' : 'Welcome'}, ${store.authSession.user?.name || (isBN ? 'এসআর অফিসার' : 'SR Officer')}
             </h2>
           </div>
 
           <!-- Quick Action Buttons -->
           <div class="flex items-center gap-2">
-            <button onclick="window.App.navigate('order_booking')" class="px-3.5 sm:px-4 py-2.5 bg-white text-brand-900 rounded-2xl font-extrabold text-xs shadow-md hover:bg-brand-50 transition flex items-center gap-1.5 active:scale-95">
-              <i data-lucide="plus-circle" class="w-4 h-4 text-brand-600"></i>
+            <button onclick="window.App.navigate('order_booking')" class="px-3.5 sm:px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-extrabold text-xs shadow-sm transition flex items-center gap-1.5 active:scale-95">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
               <span>${store.t('orderBooking')}</span>
             </button>
-            <button onclick="window.App.navigate('reports')" class="px-3.5 sm:px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold text-xs backdrop-blur border border-white/30 transition flex items-center gap-1.5 active:scale-95">
-              <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-300"></i>
+            <button onclick="window.App.navigate('reports')" class="px-3.5 sm:px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-2xl font-bold text-xs border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 active:scale-95">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-600"></i>
               <span>${store.lang === 'bn' ? 'সেলস রিপোর্ট' : 'Reports'}</span>
             </button>
-            <button onclick="window.App.navigate('products')" class="px-3.5 sm:px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold text-xs backdrop-blur border border-white/20 transition hidden sm:flex items-center gap-1.5">
+            <button onclick="window.App.navigate('products')" class="px-3.5 sm:px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-2xl font-bold text-xs border border-slate-200 dark:border-slate-700 transition hidden sm:flex items-center gap-1.5">
               <i data-lucide="package" class="w-4 h-4"></i>
               <span>${store.lang === 'bn' ? 'ওষুধ তালিকা' : 'Medicines'}</span>
             </button>
@@ -252,37 +252,37 @@ export function renderSRHeroBanner(): string {
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
           
           <!-- Monthly Target -->
-          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
-            <div class="text-[11px] font-bold text-brand-200 uppercase">${store.t('target')}</div>
-            <div class="text-xl sm:text-2xl font-black mt-0.5">৳${target.toLocaleString()}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/80">
+            <div class="text-[11px] font-bold text-slate-400 uppercase">${store.t('target')}</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5 text-slate-800 dark:text-slate-100">৳${target.toLocaleString()}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
               ${isBN ? 'মাসিক নির্ধারিত লক্ষ্য' : 'Monthly Territory Goal'}
             </div>
           </div>
 
           <!-- Total Achievement -->
-          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
-            <div class="text-[11px] font-bold text-amber-300 uppercase">${store.t('achievement')} (${achievementPct}%)</div>
-            <div class="text-xl sm:text-2xl font-black mt-0.5 text-amber-200">৳${totalSalesAchieved.toLocaleString()}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/80">
+            <div class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase">${store.t('achievement')} (${achievementPct}%)</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5 text-amber-600 dark:text-amber-400">৳${totalSalesAchieved.toLocaleString()}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
               ${isBN ? `${myOrders.length} টি নিশ্চিত অর্ডার` : `${myOrders.length} confirmed orders`}
             </div>
           </div>
 
           <!-- Today's Booking Number -->
-          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
-            <div class="text-[11px] font-bold text-emerald-300 uppercase">${store.t('todayBookingCount')}</div>
-            <div class="text-xl sm:text-2xl font-black mt-0.5">${todayBookingCount}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/80">
+            <div class="text-[11px] font-bold text-brand-600 dark:text-brand-400 uppercase">${store.t('todayBookingCount')}</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5 text-brand-700 dark:text-brand-300">${todayBookingCount} টি</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
               ${isBN ? `আজকের বুকিং (${todayStr})` : `Bookings today (${todayStr})`}
             </div>
           </div>
 
           <!-- Today's Booking Value -->
-          <div class="p-3.5 rounded-2xl bg-black/20 backdrop-blur border border-white/10">
-            <div class="text-[11px] font-bold text-teal-200 uppercase">${store.t('todayBookingValue')}</div>
-            <div class="text-xl sm:text-2xl font-black mt-0.5 text-teal-100">৳${todayBookingValue.toLocaleString()}</div>
-            <div class="text-[10px] text-brand-100 mt-0.5">
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/80">
+            <div class="text-[11px] font-bold text-tealbrand-600 dark:text-tealbrand-400 uppercase">${store.t('todayBookingValue')}</div>
+            <div class="text-xl sm:text-2xl font-black mt-0.5 text-tealbrand-700 dark:text-tealbrand-300">৳${todayBookingValue.toLocaleString()}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
               ${isBN ? 'দৈনিক মোট বুকিং মূল্য' : 'Gross daily volume'}
             </div>
           </div>
@@ -291,12 +291,13 @@ export function renderSRHeroBanner(): string {
 
         <!-- Target Progress Bar -->
         <div class="pt-2">
-          <div class="flex items-center justify-between text-xs font-semibold mb-1 text-brand-100">
+          <div class="flex items-center justify-between text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">
             <span>${isBN ? 'মাসিক অর্জনের অগ্রগতি' : 'Monthly Achievement Progress'}</span>
-            <span class="font-bold text-amber-300">${achievementPct}%</span>
+            <span class="font-bold text-brand-600 dark:text-brand-400">${achievementPct}%</span>
           </div>
-          <div class="w-full h-2.5 rounded-full bg-black/30 overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-amber-300 to-emerald-300 rounded-full transition-all duration-500" style="width: ${achievementPct}%"></div>
+          <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div class="h-full bg-brand-600 rounded-full transition-all duration-500" style="width: ${achievementPct}%"></div>
+          </div>
         </div>
 
       </div>

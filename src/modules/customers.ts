@@ -7,24 +7,28 @@
 import { store, Customer } from './store.ts';
 
 export class CustomerModule {
-  renderCustomerCard(c: Customer, onBookOrder: (id: string) => void): string {
+  renderCustomerCard(c: Customer, onBookOrder: (id: string) => void, index: number = 0): string {
     const isApproved = c.status === 'approved';
-    const assignedSR = store.db.srs.find(s => s.id === (c.assignedSrId || c.createdBy));
     const isAdmin = store.authSession.role === 'admin';
     const isBn = store.lang === 'bn';
 
     return `
-      <div class="customer-card p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-brand-500/50 transition" data-id="${c.id}" data-name="${(c.shopName || '').toLowerCase()} ${(c.name || '').toLowerCase()}" data-address="${(c.address || '').toLowerCase()}" data-phone="${(c.phone || '').toLowerCase()}" data-srid="${(c.assignedSrId || c.createdBy || '').toLowerCase()}">
-        <div>
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
-              c.category === 'dairy_farm' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
-              (c.category === 'poultry_farm' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
-              (c.category === 'pharmacy' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'))
-            }">
-              ${store.t(c.category) || c.category}
-            </span>
-            <div class="flex items-center gap-1.5">
+      <div class="customer-card p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-brand-500/50 transition" data-id="${c.id}" data-name="${(c.shopName || '').toLowerCase()} ${(c.name || '').toLowerCase()}" data-address="${(c.address || '').toLowerCase()}" data-phone="${(c.phone || '').toLowerCase()}" data-srid="${(c.assignedSrId || c.createdBy || '').toLowerCase()}">
+        <div class="flex items-start gap-3.5 flex-1 min-w-0">
+          <!-- 1, 2, 3 Numbering Badge -->
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-mono font-black text-xs sm:text-sm flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs">
+            ${index + 1}
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                c.category === 'dairy_farm' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
+                (c.category === 'poultry_farm' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
+                (c.category === 'pharmacy' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'))
+              }">
+                ${store.t(c.category) || c.category}
+              </span>
               ${isAdmin ? `
                 <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800" title="Assigned SR">
                   SR: ${c.assignedSrId || c.createdBy || 'SR01'}
@@ -36,60 +40,68 @@ export class CustomerModule {
                 ${isApproved ? (isBn ? 'অনুমোদিত' : 'Approved') : (isBn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval')}
               </span>
             </div>
-          </div>
 
-          <!-- Bold Format: BH0002 Amin Feed -->
-          <h3 class="font-black text-lg text-slate-900 dark:text-white tracking-tight">
-            <span class="text-brand-700 dark:text-brand-400 font-mono">${c.id}</span> ${c.shopName}
-          </h3>
+            <!-- Customer ID & Shop Name -->
+            <h3 class="font-black text-base sm:text-lg text-slate-900 dark:text-white tracking-tight truncate">
+              <span class="text-brand-700 dark:text-brand-400 font-mono">${c.id}</span> - ${c.shopName}
+            </h3>
 
-          <!-- Full Address: 1/2 bonani, bogura -->
-          <div class="text-xs text-slate-600 dark:text-slate-300 mt-1.5 flex items-start gap-1.5 font-medium">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0"></i>
-            <span>${c.address}</span>
-          </div>
-
-          <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs text-slate-500">
-            <div>
-              <span class="text-[11px] block text-slate-400">${store.t('proprietorCol')}:</span>
-              <span class="font-bold text-slate-800 dark:text-slate-200">${c.name}</span>
+            <!-- Address -->
+            <div class="text-xs text-slate-600 dark:text-slate-300 mt-1 flex items-start gap-1.5 font-medium">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0"></i>
+              <span class="break-words">${c.address}</span>
             </div>
-            <div>
-              <span class="text-[11px] block text-slate-400">${isBn ? 'যোগাযোগ:' : 'Contact:'}</span>
-              <a href="tel:${c.phone}" class="font-mono font-bold hover:text-brand-600">${c.phone}</a>
-            </div>
-          </div>
 
-          ${isAdmin ? `
-            <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
-              <span class="text-slate-400">${store.t('assignedSrRep')}</span>
-              <select onchange="window.CustomerActions.reassignSR('${c.id}', this.value)" class="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5">
-                ${store.db.srs.map(s => `
-                  <option value="${s.id}" ${(c.assignedSrId || c.createdBy) === s.id ? 'selected' : ''}>
-                    ${s.id} - ${s.name}
-                  </option>
-                `).join('')}
-              </select>
+            <!-- Proprietor & Phone -->
+            <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+              <div>
+                <span class="text-slate-400 text-[11px]">${store.t('proprietorCol')}:</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">${c.name}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 text-[11px]">${isBn ? 'যোগাযোগ:' : 'Contact:'}</span>
+                <a href="tel:${c.phone}" class="font-mono font-bold text-brand-600 hover:underline ml-1">${c.phone}</a>
+              </div>
+              ${c.territory ? `
+                <div>
+                  <span class="text-slate-400 text-[11px]">${store.t('territory')}:</span>
+                  <span class="font-semibold text-slate-700 dark:text-slate-300 ml-1">${c.territory}</span>
+                </div>
+              ` : ''}
             </div>
-          ` : ''}
+
+            ${isAdmin ? `
+              <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-[11px]">
+                <span class="text-slate-400">${store.t('assignedSrRep')}:</span>
+                <select onchange="window.CustomerActions.reassignSR('${c.id}', this.value)" class="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5">
+                  ${store.db.srs.map(s => `
+                    <option value="${s.id}" ${(c.assignedSrId || c.createdBy) === s.id ? 'selected' : ''}>
+                      ${s.id} - ${s.name}
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+            ` : ''}
+          </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
           ${isApproved ? `
-            <button onclick="window.CustomerActions.bookOrder('${c.id}')" class="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
-              <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+            <button onclick="window.CustomerActions.bookOrder('${c.id}')" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
+              <i data-lucide="shopping-cart" class="w-4 h-4"></i>
               <span>${store.t('orderBooking')}</span>
             </button>
           ` : `
-            <div class="flex-1 py-2 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-bold text-center">
-              ${isBn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Waiting for Admin Approval'}
+            <div class="px-3 py-2 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-bold text-center border border-amber-200 dark:border-amber-800">
+              ${isBn ? 'অনুমোদনের অপেক্ষায়' : 'Pending'}
             </div>
           `}
-          <a href="https://wa.me/88${c.phone.replace(/[^0-9]/g, '')}" target="_blank" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600" title="WhatsApp">
+          <a href="https://wa.me/88${c.phone.replace(/[^0-9]/g, '')}" target="_blank" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 transition" title="WhatsApp">
             <i data-lucide="message-circle" class="w-4 h-4"></i>
           </a>
           ${isAdmin ? `
-            <button onclick="window.CustomerActions.deleteCustomer('${c.id}')" class="p-2 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition" title="${isBn ? 'গ্রাহক মুছুন' : 'Delete Customer'}">
+            <button onclick="window.CustomerActions.deleteCustomer('${c.id}')" class="p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition" title="${isBn ? 'গ্রাহক মুছুন' : 'Delete Customer'}">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
           ` : ''}
@@ -170,15 +182,15 @@ export class CustomerModule {
           ${isBn ? `মোট ${customers.length} জন গ্রাহক প্রদর্শিত` : `Showing ${customers.length} registered customers`}
         </div>
 
-        <!-- Customer Grid Container (Updated in-place on typing!) -->
-        <div id="customerListGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Customer List Container: Clean list layout with numbering -->
+        <div id="customerListGrid" class="flex flex-col gap-3">
           ${customers.length === 0 ? `
-            <div class="col-span-2 text-center py-12 text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+            <div class="text-center py-12 text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
               <i data-lucide="users" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
               <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${store.t('noCustomersAssigned')}</p>
               <p class="text-[11px] text-slate-400 mt-1">${store.t('noCustomersAssignedSub')}</p>
             </div>
-          ` : customers.map(c => this.renderCustomerCard(c, onBookOrder)).join('')}
+          ` : customers.map((c, idx) => this.renderCustomerCard(c, onBookOrder, idx)).join('')}
         </div>
       </div>
     `;
