@@ -1402,8 +1402,29 @@ export const App = {
   exportStock: () => reportModule.exportStockToExcel(showToast)
 };
 
-// Application Bootstrap
+// Application Bootstrap with Veterinary Splash Screen Transition
+const dismissSplashScreen = () => {
+  const splash = document.getElementById('appSplashScreen');
+  if (splash) {
+    const statusText = document.getElementById('splashStatusText');
+    if (statusText) {
+      statusText.innerText = store.lang === 'bn' ? 'সিস্টেম প্রস্তুত!' : 'System Ready!';
+    }
+    setTimeout(() => {
+      splash.style.opacity = '0';
+      splash.style.transform = 'scale(1.02)';
+      splash.style.pointerEvents = 'none';
+      setTimeout(() => {
+        splash.remove();
+      }, 700);
+    }, 450);
+  }
+};
+
 window.addEventListener('DOMContentLoaded', () => {
   router.init(() => App.render());
   App.render();
+
+  // Natural splash duration (app displays veterinary emblem and circular spinner)
+  setTimeout(dismissSplashScreen, 950);
 });

@@ -105,6 +105,60 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased selection:bg-brand-500 selection:text-white transition-colors duration-200">
 
+  <!-- Veterinary ERP Loading Splash Screen -->
+  <div id="appSplashScreen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-between p-6 bg-gradient-to-b from-emerald-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-all duration-700 ease-out select-none">
+    <div class="h-8"></div>
+
+    <!-- Center Content: Logo Emblem, Branding, and Loading Circle -->
+    <div class="flex flex-col items-center text-center max-w-sm px-4">
+      <!-- 3D Veterinary Product Icon with Pulse Ring -->
+      <div class="relative mb-6">
+        <div class="absolute -inset-2 rounded-3xl bg-emerald-500/20 blur-xl animate-pulse"></div>
+        <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden shadow-2xl shadow-emerald-700/20 ring-4 ring-emerald-500/30 bg-white">
+          <img 
+            src="/vet_splash_icon.jpg" 
+            alt="BH Agro Ltd. Veterinary Health" 
+            class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" 
+          />
+        </div>
+        <!-- Veterinary Cross Mini Badge -->
+        <div class="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2 rounded-2xl shadow-lg ring-2 ring-white dark:ring-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- App Branding -->
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+        BH Agro Ltd.
+      </h1>
+      <p class="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-400 mt-1">
+        Veterinary Pharmaceuticals & Animal Health ERP
+      </p>
+
+      <!-- Veterinary Loading Circle & Status Indicator -->
+      <div class="mt-8 flex flex-col items-center gap-3">
+        <!-- Dual ring animated spinner -->
+        <div class="relative w-12 h-12">
+          <!-- Background track circle -->
+          <div class="w-12 h-12 rounded-full border-4 border-emerald-100 dark:border-emerald-950/80"></div>
+          <!-- Spinning animated circle -->
+          <div class="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-transparent border-t-emerald-600 border-r-tealbrand-500 animate-spin"></div>
+        </div>
+
+        <div class="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+          <span id="splashStatusText">লোড হচ্ছে...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Footer Tagline -->
+    <div class="text-center text-[11px] text-slate-400 dark:text-slate-500 font-medium pb-2">
+      <span>বিএইচ এগ্রো লি. • ফিল্ড এসআর ও সেন্ট্রাল ইনভেন্টরি ম্যানেজমেন্ট</span>
+    </div>
+  </div>
+
   <!-- Main Application Wrapper -->
   <div id="app" class="flex flex-col min-h-screen">
     <!-- Dynamic Content Rendered Here via /src/main.ts -->
